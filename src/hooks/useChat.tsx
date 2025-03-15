@@ -1,11 +1,11 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { Message, ChatSession, MessageRole } from '@/types/chat';
+import { generateTextWithMistral, generateImageWithStableDiffusion } from '@/services/localAiService';
 
 // Mock data for initial development until backend integration
 const MOCK_INITIAL_MESSAGE: Message = {
   id: '1',
-  content: "Hello, I'm Agent Elohim. How can I assist you today?",
+  content: "Hello, I'm Agent Elohim. How can I assist you today? I'm connected to your local Mistral 7B and Stable Diffusion models.",
   role: 'assistant',
   timestamp: Date.now()
 };
@@ -67,6 +67,20 @@ export function useChat() {
   // Get the current session
   const currentSession = sessions.find(s => s.id === currentSessionId) || null;
 
+  // Process commands to detect image generation requests
+  const processCommand = useCallback((content: string) => {
+    const isImageRequest = content.toLowerCase().includes('/image') || 
+                          content.toLowerCase().includes('generate image') ||
+                          content.toLowerCase().includes('create image');
+                          
+    return {
+      isImageRequest,
+      prompt: isImageRequest 
+        ? content.replace(/\/image|generate image|create image/i, '').trim()
+        : content
+    };
+  }, []);
+
   // Send a message
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || !currentSessionId) return;
@@ -112,10 +126,30 @@ export function useChat() {
         : session
     ));
     
-    // Simulate AI thinking time (will be replaced with actual AI call)
-    setTimeout(() => {
-      // Mock AI response for now
-      const mockResponse = getMockResponse(content);
+    try {
+      // Check if this is an image generation request
+      const { isImageRequest, prompt } = processCommand(content);
+      
+      let response;
+      if (isImageRequest) {
+        // Generate image with Stable Diffusion
+        response = await generateImageWithStableDiffusion(prompt);
+        
+        // If response starts with data:image, it's a successful image generation
+        if (response.startsWith('data:image')) {
+          response = `![Generated Image](${response})`;
+        }
+      } else {
+        // Generate text with Mistral
+        const chatHistory = currentSession?.messages
+          .filter(msg => !msg.isLoading)
+          .map(msg => ({ role: msg.role, content: msg.content })) || [];
+          
+        // Add the current user message
+        chatHistory.push({ role: 'user', content });
+        
+        response = await generateTextWithMistral(chatHistory);
+      }
       
       // Update the AI message with actual content
       setSessions(prev => prev.map(session => 
@@ -126,7 +160,7 @@ export function useChat() {
                 msg.id === pendingAiMessage.id
                   ? {
                       ...msg,
-                      content: mockResponse,
+                      content: response,
                       isLoading: false
                     }
                   : msg
@@ -135,10 +169,31 @@ export function useChat() {
             }
           : session
       ));
+    } catch (error) {
+      console.error('Error generating response:', error);
       
+      // Update with error message
+      setSessions(prev => prev.map(session => 
+        session.id === currentSessionId 
+          ? {
+              ...session,
+              messages: session.messages.map(msg => 
+                msg.id === pendingAiMessage.id
+                  ? {
+                      ...msg,
+                      content: 'Sorry, I encountered an error while processing your request. Please ensure your local AI models are running correctly.',
+                      isLoading: false
+                    }
+                  : msg
+              ),
+              updatedAt: Date.now()
+            }
+          : session
+      ));
+    } finally {
       setIsLoading(false);
-    }, 1500);
-  }, [currentSessionId]);
+    }
+  }, [currentSessionId, currentSession, processCommand]);
 
   // Mock response generator (temporary until AI integration)
   const getMockResponse = (message: string): string => {

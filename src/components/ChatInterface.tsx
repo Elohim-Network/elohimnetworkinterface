@@ -1,5 +1,4 @@
-
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { useVoice } from '@/hooks/useVoice';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,6 +7,7 @@ import Sidebar from '@/components/Sidebar';
 import ChatInput from '@/components/ChatInput';
 import MessageBubble from '@/components/MessageBubble';
 import VoiceControl from '@/components/VoiceControl';
+import { toast } from 'sonner';
 import { Message } from '@/types/chat';
 
 const ChatInterface: React.FC = () => {
@@ -38,14 +38,19 @@ const ChatInterface: React.FC = () => {
   const [showVoiceControls, setShowVoiceControls] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Scroll to bottom when messages change
+  const handleUpdateConnectionConfig = useCallback((config: {
+    mistralUrl: string;
+    stableDiffusionUrl: string;
+  }) => {
+    toast.success('Connection settings updated. Your next message will use the new endpoints.');
+  }, []);
+  
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [currentSession?.messages]);
   
-  // Stop listening and send message when user finishes speaking
   useEffect(() => {
     if (isListening && transcript && !transcript.endsWith('...') && transcript.length > 5) {
       const timer = setTimeout(() => {
@@ -54,18 +59,16 @@ const ChatInterface: React.FC = () => {
           sendMessage(finalTranscript);
           resetTranscript();
         }
-      }, 1500); // Wait 1.5s of silence before sending
+      }, 1500);
       
       return () => clearTimeout(timer);
     }
   }, [isListening, transcript, stopListeningAndGetTranscript, sendMessage, resetTranscript]);
   
-  // Show voice controls temporarily when voice features are used
   useEffect(() => {
     if (isListening || isSpeaking) {
       setShowVoiceControls(true);
       
-      // Hide after a delay when neither listening nor speaking
       if (!isListening && !isSpeaking) {
         const timer = setTimeout(() => {
           setShowVoiceControls(false);
@@ -76,17 +79,14 @@ const ChatInterface: React.FC = () => {
     }
   }, [isListening, isSpeaking]);
   
-  // Handle message sending
   const handleSendMessage = (message: string) => {
     sendMessage(message);
   };
   
-  // Toggle sidebar visibility
   const toggleSidebar = () => {
     setIsSidebarCollapsed(prev => !prev);
   };
   
-  // No current session, show empty state
   if (!currentSession) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -121,6 +121,7 @@ const ChatInterface: React.FC = () => {
           title={currentSession.title}
           isCollapsed={isSidebarCollapsed}
           onToggleSidebar={toggleSidebar}
+          onUpdateConnectionConfig={handleUpdateConnectionConfig}
         />
         
         <div className="flex-1 relative">

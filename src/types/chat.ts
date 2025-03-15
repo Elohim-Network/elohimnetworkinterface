@@ -7,6 +7,7 @@ export interface Message {
   role: MessageRole;
   timestamp: number;
   isLoading?: boolean;
+  type?: 'text' | 'image'; // To differentiate between text and image responses
 }
 
 export interface ChatSession {

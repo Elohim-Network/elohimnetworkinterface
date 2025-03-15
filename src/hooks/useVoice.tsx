@@ -1,5 +1,35 @@
-
 import { useState, useCallback, useEffect, useRef } from 'react';
+
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: {
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+  error?: any;
+}
+
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang?: string;
+  start(): void;
+  stop(): void;
+  abort(): void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: any) => void) | null;
+  onend: (() => void) | null;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition?: new () => SpeechRecognition;
+    webkitSpeechRecognition?: new () => SpeechRecognition;
+  }
+}
 
 export function useVoice() {
   const [isListening, setIsListening] = useState(false);
@@ -9,21 +39,22 @@ export function useVoice() {
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const synth = useRef(window.speechSynthesis);
   
-  // Initialize speech recognition
   useEffect(() => {
-    if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+    if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
       console.warn('Speech recognition not supported in this browser');
       return;
     }
     
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    recognitionRef.current = new SpeechRecognition();
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognitionAPI) {
+      recognitionRef.current = new SpeechRecognitionAPI();
+    }
     
     if (recognitionRef.current) {
       recognitionRef.current.continuous = true;
       recognitionRef.current.interimResults = true;
       
-      recognitionRef.current.onresult = (event) => {
+      recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
         const current = event.resultIndex;
         const transcriptText = event.results[current][0].transcript;
         setTranscript(transcriptText);
@@ -63,7 +94,6 @@ export function useVoice() {
     };
   }, [isListening]);
   
-  // Toggle listening state
   const toggleListening = useCallback(() => {
     if (!recognitionRef.current) return;
     
@@ -85,7 +115,6 @@ export function useVoice() {
     }
   }, [isListening]);
   
-  // Stop listening and return the final transcript
   const stopListeningAndGetTranscript = useCallback(() => {
     if (!recognitionRef.current || !isListening) return transcript;
     
@@ -99,7 +128,6 @@ export function useVoice() {
     return transcript;
   }, [isListening, transcript]);
   
-  // Speak text using speech synthesis
   const speak = useCallback((text: string) => {
     if (!voiceEnabled) return;
     
@@ -109,7 +137,6 @@ export function useVoice() {
     
     const utterance = new SpeechSynthesisUtterance(text);
     
-    // Get available voices and select one
     const voices = synth.current.getVoices();
     const preferredVoice = voices.find(voice => 
       voice.name.includes('Daniel') || // More natural male voice
@@ -134,7 +161,6 @@ export function useVoice() {
     synth.current.speak(utterance);
   }, [voiceEnabled]);
   
-  // Stop speaking
   const stopSpeaking = useCallback(() => {
     if (synth.current.speaking) {
       synth.current.cancel();
@@ -142,7 +168,6 @@ export function useVoice() {
     }
   }, []);
   
-  // Toggle voice enablement
   const toggleVoiceEnabled = useCallback(() => {
     setVoiceEnabled(prev => !prev);
     if (synth.current.speaking) {
