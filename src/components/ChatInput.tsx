@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, Send, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { Mic, Send, MicOff, Volume2, VolumeX, HandsClapping } from 'lucide-react';
 import { createRipple } from '@/utils/animations';
 
 interface ChatInputProps {
@@ -15,6 +15,8 @@ interface ChatInputProps {
   toggleVoiceEnabled: () => void;
   stopSpeaking: () => void;
   resetTranscript: () => void;
+  handsFreeMode: boolean;
+  toggleHandsFreeMode: () => void;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -27,7 +29,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
   voiceEnabled,
   toggleVoiceEnabled,
   stopSpeaking,
-  resetTranscript
+  resetTranscript,
+  handsFreeMode,
+  toggleHandsFreeMode
 }) => {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -74,9 +78,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Type your message..."
+        placeholder={handsFreeMode ? "Hands-free mode active - speak to chat..." : "Type your message..."}
         className="flex-1 bg-transparent border-none outline-none resize-none min-h-[40px] max-h-[120px] text-foreground placeholder:text-muted-foreground"
-        disabled={isLoading}
+        disabled={isLoading || handsFreeMode}
         rows={1}
       />
       
@@ -98,6 +102,22 @@ const ChatInput: React.FC<ChatInputProps> = ({
           )}
           {isListening && (
             <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500 animate-pulse-subtle"></span>
+          )}
+        </Button>
+        
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`relative ripple-container rounded-full ${handsFreeMode ? 'bg-purple-100 text-purple-500' : ''} animate-press`}
+          onClick={(e) => {
+            createRipple(e);
+            toggleHandsFreeMode();
+          }}
+          title={handsFreeMode ? "Disable hands-free mode" : "Enable hands-free mode"}
+        >
+          <HandsClapping className="h-5 w-5" />
+          {handsFreeMode && (
+            <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-purple-500 animate-pulse-subtle"></span>
           )}
         </Button>
         
@@ -130,7 +150,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             createRipple(e);
             handleSendMessage();
           }}
-          disabled={!message.trim() || isLoading}
+          disabled={(!message.trim() && !transcript) || isLoading}
         >
           <Send className="h-5 w-5" />
         </Button>

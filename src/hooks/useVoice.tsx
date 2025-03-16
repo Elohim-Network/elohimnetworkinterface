@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 
 interface SpeechRecognitionEvent extends Event {
   resultIndex: number;
@@ -36,8 +37,19 @@ export function useVoice() {
   const [transcript, setTranscript] = useState('');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [handsFreeMode, setHandsFreeMode] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState<{text: string, timestamp: number}[]>([]);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const synth = useRef(window.speechSynthesis);
+  
+  useEffect(() => {
+    console.log('SpeechRecognition support:', 'SpeechRecognition' in window);
+    console.log('webkitSpeechRecognition support:', 'webkitSpeechRecognition' in window);
+    
+    if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
+      toast.error('Speech recognition is not supported in this browser. Try Chrome, Edge, or Safari.');
+    }
+  }, []);
   
   useEffect(() => {
     if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
@@ -57,21 +69,36 @@ export function useVoice() {
       recognitionRef.current.onresult = (event: SpeechRecognitionEvent) => {
         const current = event.resultIndex;
         const transcriptText = event.results[current][0].transcript;
+        console.log('Speech recognition result:', transcriptText);
         setTranscript(transcriptText);
+        
+        if (handsFreeMode && event.results[current].isFinal) {
+          setConversationHistory(prev => [...prev, {
+            text: transcriptText,
+            timestamp: Date.now()
+          }]);
+        }
       };
       
       recognitionRef.current.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
+        toast.error(`Speech recognition error: ${event.error}. Try refreshing the page.`);
         setIsListening(false);
       };
       
       recognitionRef.current.onend = () => {
-        if (isListening) {
+        console.log('Speech recognition ended, isListening:', isListening);
+        if (isListening || handsFreeMode) {
           try {
+            console.log('Attempting to restart recognition');
             recognitionRef.current?.start();
           } catch (e) {
             console.error('Could not restart recognition:', e);
             setIsListening(false);
+            if (handsFreeMode) {
+              setHandsFreeMode(false);
+              toast.error('Hands-free mode stopped due to an error. Please try again.');
+            }
           }
         }
       };
@@ -92,21 +119,28 @@ export function useVoice() {
         }
       }
     };
-  }, [isListening]);
+  }, [isListening, handsFreeMode]);
   
   const toggleListening = useCallback(() => {
-    if (!recognitionRef.current) return;
+    if (!recognitionRef.current) {
+      toast.error('Speech recognition not supported in this browser');
+      return;
+    }
     
     if (!isListening) {
       setTranscript('');
       try {
+        console.log('Starting speech recognition');
         recognitionRef.current.start();
         setIsListening(true);
+        toast.success('Voice input activated');
       } catch (e) {
         console.error('Error starting recognition:', e);
+        toast.error('Failed to start voice input. Try refreshing the page.');
       }
     } else {
       try {
+        console.log('Stopping speech recognition');
         recognitionRef.current.stop();
         setIsListening(false);
       } catch (e) {
@@ -115,18 +149,53 @@ export function useVoice() {
     }
   }, [isListening]);
   
+  const toggleHandsFreeMode = useCallback(() => {
+    if (!recognitionRef.current) {
+      toast.error('Speech recognition not supported in this browser');
+      return;
+    }
+    
+    setHandsFreeMode(prev => {
+      const newValue = !prev;
+      
+      if (newValue) {
+        try {
+          recognitionRef.current?.start();
+          toast.success('Hands-free mode activated. All speech will be recorded.');
+        } catch (e) {
+          console.error('Error starting hands-free mode:', e);
+          toast.error('Failed to start hands-free mode');
+          return false;
+        }
+      } else {
+        try {
+          if (!isListening) {
+            recognitionRef.current?.stop();
+          }
+          toast.success('Hands-free mode deactivated');
+        } catch (e) {
+          console.error('Error stopping hands-free mode:', e);
+        }
+      }
+      
+      return newValue;
+    });
+  }, [isListening]);
+  
   const stopListeningAndGetTranscript = useCallback(() => {
-    if (!recognitionRef.current || !isListening) return transcript;
+    if (!recognitionRef.current || (!isListening && !handsFreeMode)) return transcript;
     
     try {
-      recognitionRef.current.stop();
-      setIsListening(false);
+      if (!handsFreeMode) {
+        recognitionRef.current.stop();
+        setIsListening(false);
+      }
     } catch (e) {
       console.error('Error stopping recognition:', e);
     }
     
     return transcript;
-  }, [isListening, transcript]);
+  }, [isListening, transcript, handsFreeMode]);
   
   const speak = useCallback((text: string) => {
     if (!voiceEnabled) return;
@@ -181,7 +250,10 @@ export function useVoice() {
     transcript,
     isSpeaking,
     voiceEnabled,
+    handsFreeMode,
+    conversationHistory,
     toggleListening,
+    toggleHandsFreeMode,
     stopListeningAndGetTranscript,
     speak,
     stopSpeaking,

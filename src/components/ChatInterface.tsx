@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { useVoice } from '@/hooks/useVoice';
@@ -26,8 +27,11 @@ const ChatInterface: React.FC = () => {
     transcript,
     isSpeaking,
     voiceEnabled,
+    handsFreeMode,
+    conversationHistory,
     toggleListening,
     stopListeningAndGetTranscript,
+    toggleHandsFreeMode,
     speak,
     stopSpeaking,
     toggleVoiceEnabled,
@@ -51,6 +55,7 @@ const ChatInterface: React.FC = () => {
     }
   }, [currentSession?.messages]);
   
+  // Effect for handling voice input in regular mode
   useEffect(() => {
     if (isListening && transcript && !transcript.endsWith('...') && transcript.length > 5) {
       const timer = setTimeout(() => {
@@ -65,11 +70,26 @@ const ChatInterface: React.FC = () => {
     }
   }, [isListening, transcript, stopListeningAndGetTranscript, sendMessage, resetTranscript]);
   
+  // Effect for hands-free mode
   useEffect(() => {
-    if (isListening || isSpeaking) {
+    if (handsFreeMode && transcript && !transcript.endsWith('...') && transcript.length > 10) {
+      const timer = setTimeout(() => {
+        if (transcript) {
+          sendMessage(transcript);
+          resetTranscript();
+        }
+      }, 2000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [handsFreeMode, transcript, sendMessage, resetTranscript]);
+  
+  // Show voice controls when voice features are active
+  useEffect(() => {
+    if (isListening || isSpeaking || handsFreeMode) {
       setShowVoiceControls(true);
       
-      if (!isListening && !isSpeaking) {
+      if (!isListening && !isSpeaking && !handsFreeMode) {
         const timer = setTimeout(() => {
           setShowVoiceControls(false);
         }, 3000);
@@ -77,7 +97,7 @@ const ChatInterface: React.FC = () => {
         return () => clearTimeout(timer);
       }
     }
-  }, [isListening, isSpeaking]);
+  }, [isListening, isSpeaking, handsFreeMode]);
   
   const handleSendMessage = (message: string) => {
     sendMessage(message);
@@ -114,6 +134,7 @@ const ChatInterface: React.FC = () => {
         onDeleteSession={deleteSession}
         isCollapsed={isSidebarCollapsed}
         onToggleSidebar={toggleSidebar}
+        conversationHistory={conversationHistory}
       />
       
       <div className="flex-1 flex flex-col h-full">
@@ -142,16 +163,27 @@ const ChatInterface: React.FC = () => {
             </div>
           </ScrollArea>
           
-          {showVoiceControls && (
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+          {(showVoiceControls || handsFreeMode) && (
+            <div className="absolute top-4 right-4 z-10">
               <VoiceControl
                 isListening={isListening}
                 isSpeaking={isSpeaking}
                 voiceEnabled={voiceEnabled}
+                handsFreeMode={handsFreeMode}
                 toggleListening={toggleListening}
                 toggleVoiceEnabled={toggleVoiceEnabled}
+                toggleHandsFreeMode={toggleHandsFreeMode}
                 stopSpeaking={stopSpeaking}
               />
+            </div>
+          )}
+          
+          {handsFreeMode && (
+            <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10 glass p-2 rounded-lg animate-pulse-subtle">
+              <div className="flex items-center gap-2">
+                <div className="h-2 w-2 bg-red-500 rounded-full"></div>
+                <span className="text-sm font-medium">Hands-free mode active</span>
+              </div>
             </div>
           )}
         </div>
@@ -168,6 +200,8 @@ const ChatInterface: React.FC = () => {
             toggleVoiceEnabled={toggleVoiceEnabled}
             stopSpeaking={stopSpeaking}
             resetTranscript={resetTranscript}
+            handsFreeMode={handsFreeMode}
+            toggleHandsFreeMode={toggleHandsFreeMode}
           />
         </div>
       </div>
