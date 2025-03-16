@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PanelLeft, X } from 'lucide-react';
 import { createRipple } from '@/utils/animations';
 import ConnectionConfig from './ConnectionConfig';
+import { ThemeToggle } from './theme-toggle';
 
 interface HeaderProps {
   title: string;
@@ -48,6 +49,7 @@ const Header: React.FC<HeaderProps> = ({
       </div>
       
       <div className="flex items-center gap-2">
+        <ThemeToggle />
         {onUpdateConnectionConfig && <ConnectionConfig onUpdate={handleUpdateConfig} />}
         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
           <span className="text-sm font-medium">AE</span>
