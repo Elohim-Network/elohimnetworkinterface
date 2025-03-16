@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, Volume2, VolumeX, Headphones, HandsClapping } from 'lucide-react';
+import { Mic, Volume2, VolumeX, Headphones, Glasses } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -46,35 +46,35 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
   };
 
   return (
-    <div className="glass p-1.5 rounded-full flex items-center gap-1.5 animate-scale-in shadow-md">
+    <div className="glass p-1 rounded-full flex items-center gap-1 animate-scale-in shadow-md absolute top-3 right-3 z-10">
       <Button
         variant={isListening ? "destructive" : "ghost"}
         size="icon"
         className={cn(
-          "rounded-full h-8 w-8",
+          "rounded-full h-7 w-7",
           isListening && "animate-pulse-subtle"
         )}
         onClick={handleMicClick}
         title={isListening ? "Stop listening" : "Voice input"}
       >
-        <Mic className="h-4 w-4" />
+        <Mic className="h-3.5 w-3.5" />
       </Button>
       
       <Button
         variant={handsFreeMode ? "destructive" : "ghost"}
         size="icon"
-        className="rounded-full h-8 w-8"
+        className="rounded-full h-7 w-7"
         onClick={toggleHandsFreeMode}
         title={handsFreeMode ? "Disable hands-free mode" : "Enable hands-free mode"}
       >
-        <HandsClapping className="h-4 w-4" />
+        <Glasses className="h-3.5 w-3.5" />
       </Button>
       
       <Button
         variant="ghost"
         size="icon"
         className={cn(
-          "rounded-full h-8 w-8",
+          "rounded-full h-7 w-7",
           isSpeaking && "animate-pulse-subtle",
           !voiceEnabled && "opacity-60"
         )}
@@ -88,9 +88,9 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
         title={isSpeaking ? "Stop speaking" : (voiceEnabled ? "Voice output on" : "Voice output off")}
       >
         {isSpeaking ? (
-          <VolumeX className="h-4 w-4 text-destructive" />
+          <VolumeX className="h-3.5 w-3.5 text-destructive" />
         ) : (
-          <Volume2 className="h-4 w-4" />
+          <Volume2 className="h-3.5 w-3.5" />
         )}
       </Button>
     </div>

@@ -13,6 +13,8 @@ interface HeaderProps {
   onUpdateConnectionConfig?: (config: {
     mistralUrl: string;
     stableDiffusionUrl: string;
+    mistralModel: string;
+    sdModel: string;
   }) => void;
 }
 
@@ -25,6 +27,8 @@ const Header: React.FC<HeaderProps> = ({
   const handleUpdateConfig = (config: {
     mistralUrl: string;
     stableDiffusionUrl: string;
+    mistralModel: string;
+    sdModel: string;
   }) => {
     if (onUpdateConnectionConfig) {
       onUpdateConnectionConfig(config);
