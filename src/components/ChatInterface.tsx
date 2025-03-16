@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { useVoice } from '@/hooks/useVoice';
@@ -28,13 +27,12 @@ const ChatInterface: React.FC = () => {
     isSpeaking,
     voiceEnabled,
     handsFreeMode,
-    conversationHistory,
+    voiceHistory,
     toggleListening,
-    stopListeningAndGetTranscript,
+    toggleVoiceEnabled,
     toggleHandsFreeMode,
     speak,
     stopSpeaking,
-    toggleVoiceEnabled,
     resetTranscript
   } = useVoice();
   
@@ -55,22 +53,20 @@ const ChatInterface: React.FC = () => {
     }
   }, [currentSession?.messages]);
   
-  // Effect for handling voice input in regular mode
   useEffect(() => {
     if (isListening && transcript && !transcript.endsWith('...') && transcript.length > 5) {
       const timer = setTimeout(() => {
-        const finalTranscript = stopListeningAndGetTranscript();
-        if (finalTranscript) {
-          sendMessage(finalTranscript);
+        toggleListening();
+        if (transcript) {
+          sendMessage(transcript);
           resetTranscript();
         }
       }, 1500);
       
       return () => clearTimeout(timer);
     }
-  }, [isListening, transcript, stopListeningAndGetTranscript, sendMessage, resetTranscript]);
+  }, [isListening, transcript, toggleListening, sendMessage, resetTranscript]);
   
-  // Effect for hands-free mode
   useEffect(() => {
     if (handsFreeMode && transcript && !transcript.endsWith('...') && transcript.length > 10) {
       const timer = setTimeout(() => {
@@ -84,7 +80,6 @@ const ChatInterface: React.FC = () => {
     }
   }, [handsFreeMode, transcript, sendMessage, resetTranscript]);
   
-  // Show voice controls when voice features are active
   useEffect(() => {
     if (isListening || isSpeaking || handsFreeMode) {
       setShowVoiceControls(true);
@@ -128,13 +123,13 @@ const ChatInterface: React.FC = () => {
     <div className="h-full flex overflow-hidden">
       <Sidebar
         sessions={sessions}
-        currentSessionId={currentSession.id}
+        currentSessionId={currentSession?.id}
         onNewSession={createNewSession}
         onSwitchSession={switchSession}
         onDeleteSession={deleteSession}
         isCollapsed={isSidebarCollapsed}
         onToggleSidebar={toggleSidebar}
-        conversationHistory={conversationHistory}
+        conversationHistory={voiceHistory}
       />
       
       <div className="flex-1 flex flex-col h-full">

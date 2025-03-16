@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, Send, MicOff, Volume2, VolumeX, HandsClapping } from 'lucide-react';
+import { Mic, Send, MicOff, Volume2, VolumeX, Glasses } from 'lucide-react';
 import { createRipple } from '@/utils/animations';
 
 interface ChatInputProps {
@@ -36,14 +35,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Update message when transcript changes
   useEffect(() => {
     if (transcript && isListening) {
       setMessage(transcript);
     }
   }, [transcript, isListening]);
 
-  // Auto-resize textarea as content grows
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -57,7 +54,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
       setMessage('');
       resetTranscript();
       
-      // Reset textarea height
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
@@ -115,7 +111,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           }}
           title={handsFreeMode ? "Disable hands-free mode" : "Enable hands-free mode"}
         >
-          <HandsClapping className="h-5 w-5" />
+          <Glasses className="h-5 w-5" />
           {handsFreeMode && (
             <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-purple-500 animate-pulse-subtle"></span>
           )}
