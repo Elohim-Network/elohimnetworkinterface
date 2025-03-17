@@ -33,8 +33,9 @@ export function exportChatsToFile(sessions: ChatSession[], filename = "agent-elo
 
 /**
  * Import chat sessions from a local JSON file
+ * @param mergeWithExisting Whether to merge with existing chats or replace them
  */
-export function importChatsFromFile(): Promise<ChatSession[]> {
+export function importChatsFromFile(mergeWithExisting = false): Promise<{sessions: ChatSession[], merged: boolean}> {
   return new Promise((resolve, reject) => {
     try {
       // Create file input element
@@ -54,7 +55,7 @@ export function importChatsFromFile(): Promise<ChatSession[]> {
           try {
             const content = event.target?.result as string;
             const sessions = JSON.parse(content) as ChatSession[];
-            resolve(sessions);
+            resolve({ sessions, merged: mergeWithExisting });
           } catch (err) {
             reject(new Error("Invalid JSON file"));
           }

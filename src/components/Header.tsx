@@ -19,7 +19,7 @@ interface HeaderProps {
   }) => void;
   sessions?: ChatSession[];
   onExportChats?: () => void;
-  onImportChats?: (sessions: ChatSession[]) => void;
+  onImportChats?: (sessions: ChatSession[], merge?: boolean) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -39,6 +39,19 @@ const Header: React.FC<HeaderProps> = ({
   }) => {
     if (onUpdateConnectionConfig) {
       onUpdateConnectionConfig(config);
+    }
+  };
+
+  const handleImportChats = (importedSessions: ChatSession[]) => {
+    if (onImportChats) {
+      // The merge parameter comes from the importChatsFromFile result
+      const result = importedSessions as unknown as { sessions: ChatSession[], merged: boolean };
+      if ('merged' in result) {
+        onImportChats(result.sessions, result.merged);
+      } else {
+        // Backward compatibility
+        onImportChats(importedSessions, false);
+      }
     }
   };
 
@@ -66,7 +79,7 @@ const Header: React.FC<HeaderProps> = ({
             onUpdate={handleUpdateConfig} 
             sessions={sessions}
             onExportChats={onExportChats}
-            onImportChats={onImportChats}
+            onImportChats={handleImportChats}
           />
         )}
         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">

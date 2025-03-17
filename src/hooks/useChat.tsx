@@ -260,6 +260,28 @@ export function useChat() {
     ));
   }, []);
 
+  // Import sessions from a file, with option to merge or replace
+  const importSessions = useCallback((importedSessions: ChatSession[], merge = false) => {
+    if (merge) {
+      // Merge imported sessions with existing ones
+      // Use session IDs to avoid duplicates
+      const existingIds = new Set(sessions.map(s => s.id));
+      const newSessions = importedSessions.filter(s => !existingIds.has(s.id));
+      
+      setSessions(prev => [...prev, ...newSessions]);
+    } else {
+      // Replace all sessions
+      setSessions(importedSessions);
+      
+      // Set current session to the first imported one if available
+      if (importedSessions.length > 0) {
+        setCurrentSessionId(importedSessions[0].id);
+      } else {
+        createNewSession();
+      }
+    }
+  }, [sessions, createNewSession]);
+
   return {
     sessions,
     currentSession,
@@ -269,6 +291,7 @@ export function useChat() {
     switchSession,
     deleteSession,
     renameSession,
-    clearSession
+    clearSession,
+    importSessions
   };
 }

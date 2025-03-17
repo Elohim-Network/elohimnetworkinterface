@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -37,7 +36,6 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
   const [presetName, setPresetName] = useState("");
   const [presets, setPresets] = useState<{[key: string]: any}[]>([]);
 
-  // Load settings from localStorage on initial render
   useEffect(() => {
     const savedConfig = localStorage.getItem('local-ai-config');
     if (savedConfig) {
@@ -52,7 +50,6 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       }
     }
     
-    // Load saved presets
     const savedPresets = localStorage.getItem('model-presets');
     if (savedPresets) {
       try {
@@ -61,7 +58,6 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
         console.error('Error parsing saved presets:', e);
       }
     } else {
-      // Initialize with default presets
       const defaultPresets = [
         {
           name: "Mac M1/M2 Default",
@@ -143,10 +139,18 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
 
   const handleImportChats = async () => {
     try {
-      const importedSessions = await importChatsFromFile();
-      if (onImportChats && importedSessions) {
-        onImportChats(importedSessions);
-        toast.success('Conversations imported successfully');
+      const confirmMerge = window.confirm(
+        "Would you like to add the imported conversations to your existing ones? " +
+        "Click 'OK' to add/merge, or 'Cancel' to replace all current conversations."
+      );
+      
+      const importResult = await importChatsFromFile(confirmMerge);
+      
+      if (onImportChats && importResult.sessions) {
+        onImportChats(importResult.sessions);
+        toast.success(importResult.merged 
+          ? 'Conversations merged successfully' 
+          : 'Conversations imported successfully');
       }
     } catch (error) {
       toast.error('Failed to import conversations');
