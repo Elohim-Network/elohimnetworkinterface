@@ -6,6 +6,7 @@ import { createRipple } from '@/utils/animations';
 import ConnectionConfig from './ConnectionConfig';
 import { ThemeToggle } from './theme-toggle';
 import { ChatSession } from '@/types/chat';
+import { VoiceInfo } from '@/hooks/useVoice';
 
 interface HeaderProps {
   title: string;
@@ -20,6 +21,15 @@ interface HeaderProps {
   sessions?: ChatSession[];
   onExportChats?: () => void;
   onImportChats?: (sessions: ChatSession[], merge?: boolean) => void;
+  // Voice related props
+  availableVoices?: VoiceInfo[];
+  currentVoiceId?: string;
+  elevenLabsApiKey?: string;
+  onUpdateVoiceApiKey?: (apiKey: string) => void;
+  onUpdateVoice?: (voiceId: string) => void;
+  onCloneVoice?: (name: string, description: string, files: File[]) => Promise<VoiceInfo | null>;
+  onDeleteVoice?: (voiceId: string) => Promise<boolean>;
+  onRefreshVoices?: () => Promise<void>;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -29,7 +39,15 @@ const Header: React.FC<HeaderProps> = ({
   onUpdateConnectionConfig,
   sessions,
   onExportChats,
-  onImportChats
+  onImportChats,
+  availableVoices,
+  currentVoiceId,
+  elevenLabsApiKey,
+  onUpdateVoiceApiKey,
+  onUpdateVoice,
+  onCloneVoice,
+  onDeleteVoice,
+  onRefreshVoices
 }) => {
   const handleUpdateConfig = (config: {
     mistralUrl: string;
@@ -80,6 +98,15 @@ const Header: React.FC<HeaderProps> = ({
             sessions={sessions}
             onExportChats={onExportChats}
             onImportChats={handleImportChats}
+            // Voice related props
+            availableVoices={availableVoices}
+            currentVoiceId={currentVoiceId}
+            elevenLabsApiKey={elevenLabsApiKey}
+            onUpdateApiKey={onUpdateVoiceApiKey}
+            onUpdateVoice={onUpdateVoice}
+            onCloneVoice={onCloneVoice}
+            onDeleteVoice={onDeleteVoice}
+            onRefreshVoices={onRefreshVoices}
           />
         )}
         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">

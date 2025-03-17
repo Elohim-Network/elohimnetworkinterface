@@ -1,13 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings, Save, Upload, Download, HardDrive } from 'lucide-react';
+import { Settings, Save, Upload, Download, HardDrive, Trash2, PlusCircle, KeyRound, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { exportChatsToFile, importChatsFromFile, setSaveLocation } from '@/utils/fileUtils';
+import { VoiceInfo } from '@/hooks/useVoice';
 
 interface ConnectionConfigProps {
   onUpdate: (config: {
@@ -17,15 +19,32 @@ interface ConnectionConfigProps {
     sdModel: string;
   }) => void;
   onExportChats?: () => void;
-  onImportChats?: (sessions: any[]) => void;
+  onImportChats?: (sessions: any[], merge?: boolean) => void;
   sessions?: any[];
+  // Voice related props
+  availableVoices?: VoiceInfo[];
+  currentVoiceId?: string;
+  elevenLabsApiKey?: string;
+  onUpdateApiKey?: (apiKey: string) => void;
+  onUpdateVoice?: (voiceId: string) => void;
+  onCloneVoice?: (name: string, description: string, files: File[]) => Promise<VoiceInfo | null>;
+  onDeleteVoice?: (voiceId: string) => Promise<boolean>;
+  onRefreshVoices?: () => Promise<void>;
 }
 
 const ConnectionConfig: React.FC<ConnectionConfigProps> = ({ 
   onUpdate,
   onExportChats,
   onImportChats,
-  sessions = []
+  sessions = [],
+  availableVoices = [],
+  currentVoiceId = '',
+  elevenLabsApiKey = '',
+  onUpdateApiKey,
+  onUpdateVoice,
+  onCloneVoice,
+  onDeleteVoice,
+  onRefreshVoices
 }) => {
   const [mistralUrl, setMistralUrl] = useState('http://localhost:8080/v1/chat/completions');
   const [stableDiffusionUrl, setStableDiffusionUrl] = useState('http://localhost:7860/sdapi/v1/txt2img');
@@ -35,6 +54,12 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
   const [activeTab, setActiveTab] = useState("text");
   const [presetName, setPresetName] = useState("");
   const [presets, setPresets] = useState<{[key: string]: any}[]>([]);
+  const [apiKey, setApiKey] = useState(elevenLabsApiKey);
+  const [selectedVoiceId, setSelectedVoiceId] = useState(currentVoiceId);
+  const [newVoiceName, setNewVoiceName] = useState('');
+  const [newVoiceDescription, setNewVoiceDescription] = useState('');
+  const [voiceFiles, setVoiceFiles] = useState<File[]>([]);
+  const [isCloning, setIsCloning] = useState(false);
 
   useEffect(() => {
     const savedConfig = localStorage.getItem('local-ai-config');
@@ -77,7 +102,11 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       setPresets(defaultPresets);
       localStorage.setItem('model-presets', JSON.stringify(defaultPresets));
     }
-  }, []);
+
+    // Set current voice settings
+    setApiKey(elevenLabsApiKey);
+    setSelectedVoiceId(currentVoiceId);
+  }, [elevenLabsApiKey, currentVoiceId]);
 
   const saveSettings = () => {
     const config = {
@@ -89,8 +118,18 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
     
     localStorage.setItem('local-ai-config', JSON.stringify(config));
     onUpdate(config);
+    
+    // Save voice settings if provided
+    if (onUpdateApiKey && apiKey !== elevenLabsApiKey) {
+      onUpdateApiKey(apiKey);
+    }
+    
+    if (onUpdateVoice && selectedVoiceId !== currentVoiceId) {
+      onUpdateVoice(selectedVoiceId);
+    }
+    
     setIsOpen(false);
-    toast.success('Connection settings updated');
+    toast.success('Settings updated');
   };
 
   const handlePresetApply = (preset: any) => {
@@ -147,7 +186,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       const importResult = await importChatsFromFile(confirmMerge);
       
       if (onImportChats && importResult.sessions) {
-        onImportChats(importResult.sessions);
+        onImportChats(importResult.sessions, importResult.merged);
         toast.success(importResult.merged 
           ? 'Conversations merged successfully' 
           : 'Conversations imported successfully');
@@ -159,6 +198,58 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
 
   const handleSetSaveLocation = () => {
     setSaveLocation();
+  };
+
+  const handleVoiceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const fileArray = Array.from(e.target.files);
+      setVoiceFiles(fileArray);
+    }
+  };
+
+  const handleCloneVoice = async () => {
+    if (!newVoiceName) {
+      toast.error('Please enter a name for your voice');
+      return;
+    }
+
+    if (voiceFiles.length === 0) {
+      toast.error('Please select at least one audio file');
+      return;
+    }
+
+    if (!onCloneVoice) {
+      toast.error('Voice cloning is not available');
+      return;
+    }
+
+    setIsCloning(true);
+    try {
+      const result = await onCloneVoice(newVoiceName, newVoiceDescription, voiceFiles);
+      if (result) {
+        setNewVoiceName('');
+        setNewVoiceDescription('');
+        setVoiceFiles([]);
+      }
+    } finally {
+      setIsCloning(false);
+    }
+  };
+
+  const handleDeleteVoice = async (voiceId: string) => {
+    if (!onDeleteVoice) return;
+    
+    if (window.confirm('Are you sure you want to delete this voice? This action cannot be undone.')) {
+      await onDeleteVoice(voiceId);
+    }
+  };
+
+  const refreshVoices = async () => {
+    if (onRefreshVoices) {
+      toast.loading('Refreshing voices...');
+      await onRefreshVoices();
+      toast.success('Voices refreshed');
+    }
   };
 
   return (
@@ -182,10 +273,11 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="text">Text AI</TabsTrigger>
             <TabsTrigger value="image">Image AI</TabsTrigger>
-            <TabsTrigger value="data">Data Management</TabsTrigger>
+            <TabsTrigger value="voice">Voice</TabsTrigger>
+            <TabsTrigger value="data">Data</TabsTrigger>
           </TabsList>
           
           <TabsContent value="text" className="pt-4 space-y-4">
@@ -242,6 +334,148 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                 The model name for your image generation AI
               </p>
             </div>
+          </TabsContent>
+
+          <TabsContent value="voice" className="pt-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="elevenlabs-api-key">ElevenLabs API Key</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="elevenlabs-api-key"
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder="Enter your ElevenLabs API key"
+                />
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={() => window.open('https://elevenlabs.io/app/account-settings', '_blank')}
+                  title="Get an API key"
+                >
+                  <KeyRound className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Your ElevenLabs API key is required for voice synthesis and voice cloning
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label htmlFor="voice-select">Voice</Label>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={refreshVoices}
+                  disabled={!apiKey}
+                  className="h-6 px-2"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Refresh
+                </Button>
+              </div>
+              <Select 
+                value={selectedVoiceId} 
+                onValueChange={setSelectedVoiceId}
+                disabled={!apiKey || availableVoices.length === 0}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a voice" />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="max-h-[200px] overflow-y-auto">
+                    {availableVoices.map((voice) => (
+                      <SelectItem key={voice.voice_id} value={voice.voice_id}>
+                        {voice.name} {voice.isCustom ? '(Custom)' : ''}
+                      </SelectItem>
+                    ))}
+                  </div>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Select a voice for text-to-speech synthesis
+              </p>
+            </div>
+
+            <div className="border rounded-md p-3 mt-4">
+              <h3 className="text-sm font-medium mb-2">Clone Your Voice</h3>
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="new-voice-name">Voice Name</Label>
+                  <Input
+                    id="new-voice-name"
+                    value={newVoiceName}
+                    onChange={(e) => setNewVoiceName(e.target.value)}
+                    placeholder="My Voice"
+                    disabled={!apiKey || isCloning}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="new-voice-description">Description (optional)</Label>
+                  <Input
+                    id="new-voice-description"
+                    value={newVoiceDescription}
+                    onChange={(e) => setNewVoiceDescription(e.target.value)}
+                    placeholder="Description of this voice"
+                    disabled={!apiKey || isCloning}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="voice-samples">Voice Samples</Label>
+                  <Input
+                    id="voice-samples"
+                    type="file"
+                    accept=".mp3,.wav,.m4a"
+                    onChange={handleVoiceFileChange}
+                    multiple
+                    disabled={!apiKey || isCloning}
+                    className="cursor-pointer"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Upload 1-10 high-quality audio samples (MP3, WAV, M4A)
+                  </p>
+                </div>
+                <div className="flex justify-center">
+                  <Button
+                    onClick={handleCloneVoice}
+                    disabled={!apiKey || !newVoiceName || voiceFiles.length === 0 || isCloning}
+                    className="w-full"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Clone Voice
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {availableVoices.some(voice => voice.isCustom) && (
+              <div className="border rounded-md p-3">
+                <h3 className="text-sm font-medium mb-2">Your Custom Voices</h3>
+                <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                  {availableVoices
+                    .filter(voice => voice.isCustom)
+                    .map(voice => (
+                      <div key={voice.voice_id} className="flex justify-between items-center p-2 bg-muted/50 rounded-md">
+                        <div>
+                          <div className="font-medium">{voice.name}</div>
+                          {voice.description && (
+                            <div className="text-xs text-muted-foreground">{voice.description}</div>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteVoice(voice.voice_id)}
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </TabsContent>
           
           <TabsContent value="data" className="pt-4 space-y-4">
@@ -312,12 +546,24 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
         </div>
         
         <div className="pt-4">
-          <p className="text-xs text-amber-500">
-            Note: Ensure your local models are running before connecting.
-          </p>
+          {activeTab === 'voice' ? (
+            <p className="text-xs text-amber-500">
+              Note: Voice cloning requires clean audio samples of a single speaker.
+            </p>
+          ) : (
+            <p className="text-xs text-amber-500">
+              Note: Ensure your local models are running before connecting.
+            </p>
+          )}
           <p className="text-xs text-muted-foreground mt-2">
-            For text models: Use llama.cpp, Ollama, or LM Studio<br/>
-            For image models: Use ComfyUI or AUTOMATIC1111
+            {activeTab === 'voice' ? (
+              <>For best results, provide 1-2 minute samples with no background noise.</>
+            ) : (
+              <>
+                For text models: Use llama.cpp, Ollama, or LM Studio<br/>
+                For image models: Use ComfyUI or AUTOMATIC1111
+              </>
+            )}
           </p>
         </div>
         

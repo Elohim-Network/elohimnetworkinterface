@@ -1,3 +1,4 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { useVoice } from '@/hooks/useVoice';
@@ -28,12 +29,20 @@ const ChatInterface: React.FC = () => {
     voiceEnabled,
     handsFreeMode,
     voiceHistory,
+    availableVoices,
+    currentVoiceId,
+    elevenLabsApiKey,
     toggleListening,
     toggleVoiceEnabled,
     toggleHandsFreeMode,
     speak,
     stopSpeaking,
-    resetTranscript
+    resetTranscript,
+    updateApiKey,
+    updateVoice,
+    cloneVoice,
+    deleteCustomVoice,
+    loadVoices
   } = useVoice();
   
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -43,6 +52,8 @@ const ChatInterface: React.FC = () => {
   const handleUpdateConnectionConfig = useCallback((config: {
     mistralUrl: string;
     stableDiffusionUrl: string;
+    mistralModel: string;
+    sdModel: string;
   }) => {
     toast.success('Connection settings updated. Your next message will use the new endpoints.');
   }, []);
@@ -138,6 +149,18 @@ const ChatInterface: React.FC = () => {
           isCollapsed={isSidebarCollapsed}
           onToggleSidebar={toggleSidebar}
           onUpdateConnectionConfig={handleUpdateConnectionConfig}
+          sessions={sessions}
+          onExportChats={sessions.length > 0 ? () => toast.info('Exporting conversations...') : undefined}
+          onImportChats={(sessions, merge) => toast.success(`Conversations ${merge ? 'merged' : 'imported'} successfully`)}
+          // Voice related props
+          availableVoices={availableVoices}
+          currentVoiceId={currentVoiceId}
+          elevenLabsApiKey={elevenLabsApiKey}
+          onUpdateVoiceApiKey={updateApiKey}
+          onUpdateVoice={updateVoice}
+          onCloneVoice={cloneVoice}
+          onDeleteVoice={deleteCustomVoice}
+          onRefreshVoices={loadVoices}
         />
         
         <div className="flex-1 relative">

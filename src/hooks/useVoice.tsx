@@ -1,11 +1,20 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
+import * as elevenLabsService from '@/services/elevenLabsService';
 
 // Debug logging function that always logs regardless of environment
 const debugLog = (...args: any[]) => {
   console.log('[Voice Debug]', ...args);
 };
+
+export interface VoiceInfo {
+  voice_id: string;
+  name: string;
+  category?: string;
+  description?: string;
+  isCustom?: boolean;
+}
 
 export const useVoice = () => {
   const [isListening, setIsListening] = useState(false);
@@ -15,6 +24,129 @@ export const useVoice = () => {
   const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
   const [handsFreeMode, setHandsFreeMode] = useState(false);
   const [voiceHistory, setVoiceHistory] = useState<{timestamp: number, text: string}[]>([]);
+  const [availableVoices, setAvailableVoices] = useState<VoiceInfo[]>([]);
+  const [currentVoiceId, setCurrentVoiceId] = useState<string>('');
+  const [elevenLabsApiKey, setElevenLabsApiKey] = useState<string>('');
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Create audio element for playback
+  useEffect(() => {
+    audioRef.current = new Audio();
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Load API key and default voice ID from localStorage
+  useEffect(() => {
+    const storedApiKey = localStorage.getItem('elevenlabs-api-key') || '';
+    const storedVoiceId = localStorage.getItem('elevenlabs-voice-id') || 'EXAVITQu4vr4xnSDxMaL'; // Default voice (Sarah)
+    
+    setElevenLabsApiKey(storedApiKey);
+    setCurrentVoiceId(storedVoiceId);
+    
+    // Load voices if API key exists
+    if (storedApiKey) {
+      loadVoices();
+    } else {
+      // Use default voices when no API key is set
+      setAvailableVoices(elevenLabsService.getDefaultVoices());
+    }
+  }, []);
+
+  // Load available voices from ElevenLabs
+  const loadVoices = useCallback(async () => {
+    try {
+      const voices = await elevenLabsService.getVoices();
+      setAvailableVoices(voices);
+      debugLog('Loaded voices:', voices.length);
+    } catch (error) {
+      console.error('Failed to load voices:', error);
+      toast.error('Failed to load voices. Using default voice list.');
+      setAvailableVoices(elevenLabsService.getDefaultVoices());
+    }
+  }, []);
+
+  // Update ElevenLabs API key
+  const updateApiKey = useCallback((apiKey: string) => {
+    setElevenLabsApiKey(apiKey);
+    elevenLabsService.setApiKey(apiKey);
+    
+    if (apiKey) {
+      loadVoices();
+    }
+    
+    toast.success('ElevenLabs API key updated');
+  }, [loadVoices]);
+
+  // Update the current voice
+  const updateVoice = useCallback((voiceId: string) => {
+    setCurrentVoiceId(voiceId);
+    elevenLabsService.setDefaultVoiceId(voiceId);
+    
+    const selectedVoice = availableVoices.find(v => v.voice_id === voiceId);
+    if (selectedVoice) {
+      toast.success(`Voice set to ${selectedVoice.name}`);
+    }
+  }, [availableVoices]);
+
+  // Clone a new voice
+  const cloneVoice = useCallback(async (name: string, description: string, files: File[]) => {
+    try {
+      if (!elevenLabsApiKey) {
+        toast.error('ElevenLabs API key is required');
+        return null;
+      }
+      
+      toast.loading('Cloning voice...');
+      const result = await elevenLabsService.cloneVoice(name, description, files);
+      
+      if (result) {
+        toast.success(`Voice "${name}" created successfully`);
+        await loadVoices(); // Refresh the voice list
+        return result;
+      } else {
+        toast.error('Failed to clone voice');
+        return null;
+      }
+    } catch (error) {
+      console.error('Error cloning voice:', error);
+      toast.error('Error cloning voice');
+      return null;
+    }
+  }, [elevenLabsApiKey, loadVoices]);
+
+  // Delete a voice
+  const deleteCustomVoice = useCallback(async (voiceId: string) => {
+    try {
+      const success = await elevenLabsService.deleteVoice(voiceId);
+      
+      if (success) {
+        toast.success('Voice deleted successfully');
+        await loadVoices(); // Refresh the voice list
+        
+        // If the deleted voice was the current one, switch to default
+        if (currentVoiceId === voiceId) {
+          const defaultVoice = 'EXAVITQu4vr4xnSDxMaL'; // Sarah
+          setCurrentVoiceId(defaultVoice);
+          elevenLabsService.setDefaultVoiceId(defaultVoice);
+        }
+        
+        return true;
+      } else {
+        toast.error('Failed to delete voice');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error deleting voice:', error);
+      toast.error('Error deleting voice');
+      return false;
+    }
+  }, [currentVoiceId, loadVoices]);
 
   // Initialize speech recognition on component mount
   useEffect(() => {
@@ -176,43 +308,98 @@ export const useVoice = () => {
     }
   }, [handsFreeMode, isListening]);
 
-  // Speak text using speech synthesis
-  const speak = useCallback((text: string) => {
+  // Speak text using ElevenLabs TTS
+  const speak = useCallback(async (text: string) => {
     if (!voiceEnabled) return;
     
-    if ('speechSynthesis' in window) {
-      const synthesis = window.speechSynthesis;
-      const utterance = new SpeechSynthesisUtterance(text);
+    try {
+      setIsSpeaking(true);
+      debugLog('Speaking with ElevenLabs:', text.substring(0, 50) + '...');
       
-      utterance.onstart = () => {
-        setIsSpeaking(true);
-        debugLog('Speech synthesis started');
-      };
+      // If we don't have an API key, use the native Speech Synthesis
+      if (!elevenLabsApiKey) {
+        if ('speechSynthesis' in window) {
+          const synthesis = window.speechSynthesis;
+          const utterance = new SpeechSynthesisUtterance(text);
+          
+          utterance.onend = () => {
+            setIsSpeaking(false);
+            debugLog('Speech synthesis ended');
+          };
+          
+          utterance.onerror = (event) => {
+            debugLog('Speech synthesis error:', event);
+            setIsSpeaking(false);
+          };
+          
+          synthesis.speak(utterance);
+        } else {
+          toast.error('Speech synthesis is not supported in this browser');
+          debugLog('Speech synthesis not supported');
+          setIsSpeaking(false);
+        }
+        return;
+      }
       
-      utterance.onend = () => {
-        setIsSpeaking(false);
-        debugLog('Speech synthesis ended');
-      };
+      // Use ElevenLabs TTS
+      const audioData = await elevenLabsService.textToSpeech(text, currentVoiceId);
       
-      utterance.onerror = (event) => {
-        debugLog('Speech synthesis error:', event);
-        setIsSpeaking(false);
-      };
+      if (!audioData) {
+        throw new Error('Failed to get audio data');
+      }
       
-      synthesis.speak(utterance);
-    } else {
-      toast.error('Speech synthesis is not supported in this browser');
-      debugLog('Speech synthesis not supported');
+      // Create audio blob and play it
+      const blob = new Blob([audioData], { type: 'audio/mpeg' });
+      const url = URL.createObjectURL(blob);
+      
+      if (audioRef.current) {
+        audioRef.current.src = url;
+        audioRef.current.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(url);
+          debugLog('ElevenLabs audio playback ended');
+        };
+        
+        audioRef.current.onerror = (e) => {
+          console.error('Audio playback error:', e);
+          setIsSpeaking(false);
+          URL.revokeObjectURL(url);
+        };
+        
+        audioRef.current.play();
+      }
+    } catch (error) {
+      console.error('Error during text-to-speech:', error);
+      setIsSpeaking(false);
+      
+      // Fallback to browser speech synthesis
+      if ('speechSynthesis' in window) {
+        const synthesis = window.speechSynthesis;
+        const utterance = new SpeechSynthesisUtterance(text);
+        
+        utterance.onend = () => {
+          setIsSpeaking(false);
+        };
+        
+        synthesis.speak(utterance);
+        toast.error('Using browser speech instead: ElevenLabs error');
+      }
     }
-  }, [voiceEnabled]);
+  }, [voiceEnabled, elevenLabsApiKey, currentVoiceId]);
 
   // Stop any ongoing speech
   const stopSpeaking = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-      debugLog('Speech synthesis stopped');
     }
+    
+    setIsSpeaking(false);
+    debugLog('Speech stopped');
   }, []);
 
   // Reset transcript
@@ -228,12 +415,20 @@ export const useVoice = () => {
     voiceEnabled,
     handsFreeMode,
     voiceHistory,
+    availableVoices,
+    currentVoiceId,
+    elevenLabsApiKey,
     toggleListening,
     toggleVoiceEnabled,
     toggleHandsFreeMode,
     speak,
     stopSpeaking,
-    resetTranscript
+    resetTranscript,
+    updateApiKey,
+    updateVoice,
+    cloneVoice,
+    deleteCustomVoice,
+    loadVoices
   };
 };
 
