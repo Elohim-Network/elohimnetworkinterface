@@ -30,6 +30,9 @@ interface HeaderProps {
   onCloneVoice?: (name: string, description: string, files: File[]) => Promise<VoiceInfo | null>;
   onDeleteVoice?: (voiceId: string) => Promise<boolean>;
   onRefreshVoices?: () => Promise<void>;
+  // Browser voice props
+  useBrowserVoice?: boolean;
+  onToggleBrowserVoice?: (use: boolean) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
@@ -47,7 +50,9 @@ const Header: React.FC<HeaderProps> = ({
   onUpdateVoice,
   onCloneVoice,
   onDeleteVoice,
-  onRefreshVoices
+  onRefreshVoices,
+  useBrowserVoice,
+  onToggleBrowserVoice
 }) => {
   const handleUpdateConfig = (config: {
     mistralUrl: string;
@@ -107,6 +112,9 @@ const Header: React.FC<HeaderProps> = ({
             onCloneVoice={onCloneVoice}
             onDeleteVoice={onDeleteVoice}
             onRefreshVoices={onRefreshVoices}
+            // Browser voice props
+            useBrowserVoice={useBrowserVoice}
+            onToggleBrowserVoice={onToggleBrowserVoice}
           />
         )}
         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">

@@ -42,7 +42,10 @@ const ChatInterface: React.FC = () => {
     updateVoice,
     cloneVoice,
     deleteCustomVoice,
-    loadVoices
+    loadVoices,
+    // Browser voice props
+    useBrowserVoice,
+    toggleBrowserVoice
   } = useVoice();
   
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -161,6 +164,9 @@ const ChatInterface: React.FC = () => {
           onCloneVoice={cloneVoice}
           onDeleteVoice={deleteCustomVoice}
           onRefreshVoices={loadVoices}
+          // Browser voice props
+          useBrowserVoice={useBrowserVoice}
+          onToggleBrowserVoice={toggleBrowserVoice}
         />
         
         <div className="flex-1 relative">

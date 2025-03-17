@@ -1,7 +1,7 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import * as elevenLabsService from '@/services/elevenLabsService';
+import * as browserVoiceService from '@/services/browserVoiceService';
 
 // Debug logging function that always logs regardless of environment
 const debugLog = (...args: any[]) => {
@@ -27,6 +27,9 @@ export const useVoice = () => {
   const [availableVoices, setAvailableVoices] = useState<VoiceInfo[]>([]);
   const [currentVoiceId, setCurrentVoiceId] = useState<string>('');
   const [elevenLabsApiKey, setElevenLabsApiKey] = useState<string>('');
+  const [useBrowserVoice, setUseBrowserVoice] = useState(false);
+  const [browserVoices, setBrowserVoices] = useState<any[]>([]);
+  const [currentBrowserVoiceId, setCurrentBrowserVoiceId] = useState('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Create audio element for playback
@@ -147,6 +150,43 @@ export const useVoice = () => {
       return false;
     }
   }, [currentVoiceId, loadVoices]);
+
+  // Load browser voices
+  useEffect(() => {
+    const storedBrowserVoices = browserVoiceService.getStoredVoices();
+    setBrowserVoices(storedBrowserVoices);
+    
+    const currentBrowserVoice = browserVoiceService.getCurrentVoiceId();
+    setCurrentBrowserVoiceId(currentBrowserVoice);
+    
+    // Check if browser voice is enabled
+    const useBrowserVoiceSetting = localStorage.getItem('use-browser-voice') === 'true';
+    setUseBrowserVoice(useBrowserVoiceSetting);
+  }, []);
+
+  // Toggle between browser voice and ElevenLabs
+  const toggleBrowserVoice = useCallback((use: boolean) => {
+    setUseBrowserVoice(use);
+    localStorage.setItem('use-browser-voice', String(use));
+    toast.success(use ? 'Using your own voice recordings' : 'Using ElevenLabs voices');
+  }, []);
+
+  // Update current browser voice
+  const updateBrowserVoice = useCallback((voiceId: string) => {
+    setCurrentBrowserVoiceId(voiceId);
+    browserVoiceService.setCurrentVoiceId(voiceId);
+    
+    const selectedVoice = browserVoices.find(v => v.id === voiceId);
+    if (selectedVoice) {
+      toast.success(`Voice set to ${selectedVoice.name}`);
+    }
+  }, [browserVoices]);
+
+  // Refresh browser voices
+  const refreshBrowserVoices = useCallback(() => {
+    const voices = browserVoiceService.getStoredVoices();
+    setBrowserVoices(voices);
+  }, []);
 
   // Initialize speech recognition on component mount
   useEffect(() => {
@@ -314,10 +354,24 @@ export const useVoice = () => {
     
     try {
       setIsSpeaking(true);
-      debugLog('Speaking with ElevenLabs:', text.substring(0, 50) + '...');
+      debugLog('Speaking:', text.substring(0, 50) + '...');
       
-      // If we don't have an API key, use the native Speech Synthesis
-      if (!elevenLabsApiKey) {
+      // If browser voice is enabled and we have a browser voice ID
+      if (useBrowserVoice && currentBrowserVoiceId) {
+        debugLog('Using browser voice:', currentBrowserVoiceId);
+        
+        try {
+          await browserVoiceService.speakWithRecordedVoice(text, currentBrowserVoiceId);
+          setIsSpeaking(false);
+          return;
+        } catch (error) {
+          console.error('Error using browser voice:', error);
+          // Fall through to other methods if browser voice fails
+        }
+      }
+      
+      // If we don't have an API key or browser voice failed, use the native Speech Synthesis
+      if (!elevenLabsApiKey || useBrowserVoice) {
         if ('speechSynthesis' in window) {
           const synthesis = window.speechSynthesis;
           const utterance = new SpeechSynthesisUtterance(text);
@@ -382,10 +436,10 @@ export const useVoice = () => {
         };
         
         synthesis.speak(utterance);
-        toast.error('Using browser speech instead: ElevenLabs error');
+        toast.error('Using browser speech instead: Error encountered');
       }
     }
-  }, [voiceEnabled, elevenLabsApiKey, currentVoiceId]);
+  }, [voiceEnabled, elevenLabsApiKey, currentVoiceId, useBrowserVoice, currentBrowserVoiceId]);
 
   // Stop any ongoing speech
   const stopSpeaking = useCallback(() => {
@@ -428,7 +482,13 @@ export const useVoice = () => {
     updateVoice,
     cloneVoice,
     deleteCustomVoice,
-    loadVoices
+    loadVoices,
+    useBrowserVoice,
+    browserVoices,
+    currentBrowserVoiceId,
+    toggleBrowserVoice,
+    updateBrowserVoice,
+    refreshBrowserVoices
   };
 };
 

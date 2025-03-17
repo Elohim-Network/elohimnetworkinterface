@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { exportChatsToFile, importChatsFromFile, setSaveLocation } from '@/utils/fileUtils';
 import { VoiceInfo } from '@/hooks/useVoice';
+import { Switch } from '@/components/ui/switch';
+import VoiceRecorder from './VoiceRecorder';
+import * as browserVoiceService from '@/services/browserVoiceService';
 
 interface ConnectionConfigProps {
   onUpdate: (config: {
@@ -21,7 +23,6 @@ interface ConnectionConfigProps {
   onExportChats?: () => void;
   onImportChats?: (sessions: any[], merge?: boolean) => void;
   sessions?: any[];
-  // Voice related props
   availableVoices?: VoiceInfo[];
   currentVoiceId?: string;
   elevenLabsApiKey?: string;
@@ -30,6 +31,8 @@ interface ConnectionConfigProps {
   onCloneVoice?: (name: string, description: string, files: File[]) => Promise<VoiceInfo | null>;
   onDeleteVoice?: (voiceId: string) => Promise<boolean>;
   onRefreshVoices?: () => Promise<void>;
+  useBrowserVoice?: boolean;
+  onToggleBrowserVoice?: (use: boolean) => void;
 }
 
 const ConnectionConfig: React.FC<ConnectionConfigProps> = ({ 
@@ -44,7 +47,9 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
   onUpdateVoice,
   onCloneVoice,
   onDeleteVoice,
-  onRefreshVoices
+  onRefreshVoices,
+  useBrowserVoice = false,
+  onToggleBrowserVoice
 }) => {
   const [mistralUrl, setMistralUrl] = useState('http://localhost:8080/v1/chat/completions');
   const [stableDiffusionUrl, setStableDiffusionUrl] = useState('http://localhost:7860/sdapi/v1/txt2img');
@@ -60,6 +65,8 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
   const [newVoiceDescription, setNewVoiceDescription] = useState('');
   const [voiceFiles, setVoiceFiles] = useState<File[]>([]);
   const [isCloning, setIsCloning] = useState(false);
+  const [browserVoices, setBrowserVoices] = useState<any[]>([]);
+  const [currentBrowserVoiceId, setCurrentBrowserVoiceId] = useState('');
 
   useEffect(() => {
     const savedConfig = localStorage.getItem('local-ai-config');
@@ -103,9 +110,15 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       localStorage.setItem('model-presets', JSON.stringify(defaultPresets));
     }
 
-    // Set current voice settings
     setApiKey(elevenLabsApiKey);
     setSelectedVoiceId(currentVoiceId);
+    
+    // Load browser voices
+    const storedBrowserVoices = browserVoiceService.getStoredVoices();
+    setBrowserVoices(storedBrowserVoices);
+    
+    const currentBrowserVoice = browserVoiceService.getCurrentVoiceId();
+    setCurrentBrowserVoiceId(currentBrowserVoice);
   }, [elevenLabsApiKey, currentVoiceId]);
 
   const saveSettings = () => {
@@ -252,6 +265,23 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
     }
   };
 
+  const handleToggleBrowserVoice = (checked: boolean) => {
+    if (onToggleBrowserVoice) {
+      onToggleBrowserVoice(checked);
+    }
+  };
+
+  const handleSelectBrowserVoice = (voiceId: string) => {
+    browserVoiceService.setCurrentVoiceId(voiceId);
+    setCurrentBrowserVoiceId(voiceId);
+    toast.success('Browser voice updated');
+  };
+
+  const refreshBrowserVoices = () => {
+    const voices = browserVoiceService.getStoredVoices();
+    setBrowserVoices(voices);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -273,10 +303,11 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="text">Text AI</TabsTrigger>
             <TabsTrigger value="image">Image AI</TabsTrigger>
             <TabsTrigger value="voice">Voice</TabsTrigger>
+            <TabsTrigger value="myvoice">My Voice</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
           </TabsList>
           
@@ -337,145 +368,209 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
           </TabsContent>
 
           <TabsContent value="voice" className="pt-4 space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="elevenlabs-api-key">ElevenLabs API Key</Label>
-              <div className="flex gap-2">
-                <Input
-                  id="elevenlabs-api-key"
-                  type="password"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Enter your ElevenLabs API key"
-                />
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={() => window.open('https://elevenlabs.io/app/account-settings', '_blank')}
-                  title="Get an API key"
-                >
-                  <KeyRound className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Your ElevenLabs API key is required for voice synthesis and voice cloning
-              </p>
+            <div className="flex items-center space-x-2 pb-2">
+              <Switch 
+                id="use-browser-voice" 
+                checked={useBrowserVoice} 
+                onCheckedChange={handleToggleBrowserVoice}
+              />
+              <Label htmlFor="use-browser-voice">
+                Use my recorded voice (free) instead of ElevenLabs
+              </Label>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label htmlFor="voice-select">Voice</Label>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={refreshVoices}
-                  disabled={!apiKey}
-                  className="h-6 px-2"
-                >
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Refresh
-                </Button>
-              </div>
-              <Select 
-                value={selectedVoiceId} 
-                onValueChange={setSelectedVoiceId}
-                disabled={!apiKey || availableVoices.length === 0}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a voice" />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="max-h-[200px] overflow-y-auto">
-                    {availableVoices.map((voice) => (
-                      <SelectItem key={voice.voice_id} value={voice.voice_id}>
-                        {voice.name} {voice.isCustom ? '(Custom)' : ''}
-                      </SelectItem>
-                    ))}
+            {!useBrowserVoice && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="elevenlabs-api-key">ElevenLabs API Key</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="elevenlabs-api-key"
+                      type="password"
+                      value={apiKey}
+                      onChange={(e) => setApiKey(e.target.value)}
+                      placeholder="Enter your ElevenLabs API key"
+                    />
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      onClick={() => window.open('https://elevenlabs.io/app/account-settings', '_blank')}
+                      title="Get an API key"
+                    >
+                      <KeyRound className="h-4 w-4" />
+                    </Button>
                   </div>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Select a voice for text-to-speech synthesis
-              </p>
-            </div>
-
-            <div className="border rounded-md p-3 mt-4">
-              <h3 className="text-sm font-medium mb-2">Clone Your Voice</h3>
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="new-voice-name">Voice Name</Label>
-                  <Input
-                    id="new-voice-name"
-                    value={newVoiceName}
-                    onChange={(e) => setNewVoiceName(e.target.value)}
-                    placeholder="My Voice"
-                    disabled={!apiKey || isCloning}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="new-voice-description">Description (optional)</Label>
-                  <Input
-                    id="new-voice-description"
-                    value={newVoiceDescription}
-                    onChange={(e) => setNewVoiceDescription(e.target.value)}
-                    placeholder="Description of this voice"
-                    disabled={!apiKey || isCloning}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="voice-samples">Voice Samples</Label>
-                  <Input
-                    id="voice-samples"
-                    type="file"
-                    accept=".mp3,.wav,.m4a"
-                    onChange={handleVoiceFileChange}
-                    multiple
-                    disabled={!apiKey || isCloning}
-                    className="cursor-pointer"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Upload 1-10 high-quality audio samples (MP3, WAV, M4A)
+                  <p className="text-xs text-muted-foreground">
+                    Your ElevenLabs API key is required for voice synthesis and voice cloning
                   </p>
                 </div>
-                <div className="flex justify-center">
-                  <Button
-                    onClick={handleCloneVoice}
-                    disabled={!apiKey || !newVoiceName || voiceFiles.length === 0 || isCloning}
-                    className="w-full"
-                  >
-                    <PlusCircle className="h-4 w-4 mr-2" />
-                    Clone Voice
-                  </Button>
-                </div>
-              </div>
-            </div>
 
-            {availableVoices.some(voice => voice.isCustom) && (
-              <div className="border rounded-md p-3">
-                <h3 className="text-sm font-medium mb-2">Your Custom Voices</h3>
-                <div className="space-y-2 max-h-[150px] overflow-y-auto">
-                  {availableVoices
-                    .filter(voice => voice.isCustom)
-                    .map(voice => (
-                      <div key={voice.voice_id} className="flex justify-between items-center p-2 bg-muted/50 rounded-md">
-                        <div>
-                          <div className="font-medium">{voice.name}</div>
-                          {voice.description && (
-                            <div className="text-xs text-muted-foreground">{voice.description}</div>
-                          )}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDeleteVoice(voice.voice_id)}
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="voice-select">Voice</Label>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={refreshVoices}
+                      disabled={!apiKey}
+                      className="h-6 px-2"
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Refresh
+                    </Button>
+                  </div>
+                  <Select 
+                    value={selectedVoiceId} 
+                    onValueChange={setSelectedVoiceId}
+                    disabled={!apiKey || availableVoices.length === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a voice" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div className="max-h-[200px] overflow-y-auto">
+                        {availableVoices.map((voice) => (
+                          <SelectItem key={voice.voice_id} value={voice.voice_id}>
+                            {voice.name} {voice.isCustom ? '(Custom)' : ''}
+                          </SelectItem>
+                        ))}
                       </div>
-                    ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select a voice for text-to-speech synthesis
+                  </p>
                 </div>
+
+                <div className="border rounded-md p-3 mt-4">
+                  <h3 className="text-sm font-medium mb-2">Clone Your Voice</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="new-voice-name">Voice Name</Label>
+                      <Input
+                        id="new-voice-name"
+                        value={newVoiceName}
+                        onChange={(e) => setNewVoiceName(e.target.value)}
+                        placeholder="My Voice"
+                        disabled={!apiKey || isCloning}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="new-voice-description">Description (optional)</Label>
+                      <Input
+                        id="new-voice-description"
+                        value={newVoiceDescription}
+                        onChange={(e) => setNewVoiceDescription(e.target.value)}
+                        placeholder="Description of this voice"
+                        disabled={!apiKey || isCloning}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="voice-samples">Voice Samples</Label>
+                      <Input
+                        id="voice-samples"
+                        type="file"
+                        accept=".mp3,.wav,.m4a"
+                        onChange={handleVoiceFileChange}
+                        multiple
+                        disabled={!apiKey || isCloning}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Upload 1-10 high-quality audio samples (MP3, WAV, M4A)
+                      </p>
+                    </div>
+                    <div className="flex justify-center">
+                      <Button
+                        onClick={handleCloneVoice}
+                        disabled={!apiKey || !newVoiceName || voiceFiles.length === 0 || isCloning}
+                        className="w-full"
+                      >
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Clone Voice
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {availableVoices.some(voice => voice.isCustom) && (
+                  <div className="border rounded-md p-3">
+                    <h3 className="text-sm font-medium mb-2">Your Custom Voices</h3>
+                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                      {availableVoices
+                        .filter(voice => voice.isCustom)
+                        .map(voice => (
+                          <div key={voice.voice_id} className="flex justify-between items-center p-2 bg-muted/50 rounded-md">
+                            <div>
+                              <div className="font-medium">{voice.name}</div>
+                              {voice.description && (
+                                <div className="text-xs text-muted-foreground">{voice.description}</div>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteVoice(voice.voice_id)}
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {useBrowserVoice && (
+              <div className="p-4 border rounded-md bg-muted/30">
+                <p className="text-sm">
+                  You're using your own voice recordings instead of ElevenLabs. 
+                  Go to the "My Voice" tab to record and manage your voice samples.
+                </p>
               </div>
             )}
+          </TabsContent>
+          
+          <TabsContent value="myvoice" className="pt-4 space-y-4">
+            <div className="border rounded-md p-3">
+              <VoiceRecorder onVoiceCreated={refreshBrowserVoices} />
+            </div>
+            
+            {browserVoices.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="browser-voice-select">Select Your Voice</Label>
+                <Select 
+                  value={currentBrowserVoiceId} 
+                  onValueChange={handleSelectBrowserVoice}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a voice" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {browserVoices.map((voice) => (
+                      <SelectItem key={voice.id} value={voice.id}>
+                        {voice.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Select which of your recorded voices to use for speech
+                </p>
+              </div>
+            )}
+            
+            <div className="bg-muted/30 p-3 rounded-md">
+              <h3 className="text-sm font-medium">Tips for better recordings:</h3>
+              <ul className="text-xs text-muted-foreground mt-2 space-y-1 list-disc pl-4">
+                <li>Use a good microphone in a quiet environment</li>
+                <li>Speak clearly at a consistent pace</li>
+                <li>Record a few seconds of sample speech</li>
+                <li>Try recording different phrases for better variety</li>
+              </ul>
+            </div>
           </TabsContent>
           
           <TabsContent value="data" className="pt-4 space-y-4">
