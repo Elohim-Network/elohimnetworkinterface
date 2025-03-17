@@ -5,6 +5,7 @@ import { PanelLeft, X } from 'lucide-react';
 import { createRipple } from '@/utils/animations';
 import ConnectionConfig from './ConnectionConfig';
 import { ThemeToggle } from './theme-toggle';
+import { ChatSession } from '@/types/chat';
 
 interface HeaderProps {
   title: string;
@@ -16,13 +17,19 @@ interface HeaderProps {
     mistralModel: string;
     sdModel: string;
   }) => void;
+  sessions?: ChatSession[];
+  onExportChats?: () => void;
+  onImportChats?: (sessions: ChatSession[]) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
   title, 
   isCollapsed, 
   onToggleSidebar,
-  onUpdateConnectionConfig
+  onUpdateConnectionConfig,
+  sessions,
+  onExportChats,
+  onImportChats
 }) => {
   const handleUpdateConfig = (config: {
     mistralUrl: string;
@@ -54,7 +61,14 @@ const Header: React.FC<HeaderProps> = ({
       
       <div className="flex items-center gap-2">
         <ThemeToggle />
-        {onUpdateConnectionConfig && <ConnectionConfig onUpdate={handleUpdateConfig} />}
+        {onUpdateConnectionConfig && (
+          <ConnectionConfig 
+            onUpdate={handleUpdateConfig} 
+            sessions={sessions}
+            onExportChats={onExportChats}
+            onImportChats={onImportChats}
+          />
+        )}
         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
           <span className="text-sm font-medium">AE</span>
         </div>

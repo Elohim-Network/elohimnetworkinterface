@@ -1,6 +1,6 @@
 
 // Local AI Service - Communicates with locally running AI models
-// This service handles connections to Mistral 7B and Stable Diffusion
+// This service handles connections to various local LLMs and Stable Diffusion
 
 interface MistralCompletionRequest {
   prompt: string;
@@ -39,6 +39,45 @@ const getConfig = () => {
   };
 };
 
+/**
+ * Detect which LLM backend is being used based on URL
+ * This helps format requests correctly for different APIs
+ */
+const detectLlmBackend = (url: string): 'openai-compatible' | 'ollama' | 'lmstudio' | 'unknown' => {
+  const lowerUrl = url.toLowerCase();
+  
+  if (lowerUrl.includes('ollama')) {
+    return 'ollama';
+  } else if (lowerUrl.includes('lmstudio')) {
+    return 'lmstudio';
+  } else if (lowerUrl.includes('/v1/') || lowerUrl.includes('/chat/completions')) {
+    return 'openai-compatible';
+  }
+  
+  return 'unknown';
+};
+
+/**
+ * Format messages for different LLM backend APIs
+ */
+const formatMessages = (
+  messages: { role: string; content: string }[], 
+  backend: 'openai-compatible' | 'ollama' | 'lmstudio' | 'unknown'
+) => {
+  switch (backend) {
+    case 'openai-compatible':
+      return messages;
+    case 'ollama':
+      // Ollama expects messages in OpenAI format but might have specific formatting
+      return messages;
+    case 'lmstudio':
+      // LM Studio follows OpenAI format
+      return messages;
+    default:
+      return messages;
+  }
+};
+
 export async function generateTextWithMistral(
   messages: { role: string; content: string }[], 
   localApiUrl?: string
@@ -50,31 +89,87 @@ export async function generateTextWithMistral(
   try {
     console.log(`Generating text with ${modelName} at ${apiUrl}`);
     
-    // Formatting messages in the expected chat format
+    // Detect which backend we're working with
+    const backend = detectLlmBackend(apiUrl);
+    const formattedMessages = formatMessages(messages, backend);
+    
+    // Build request body according to the detected backend
+    let requestBody: any = {};
+    
+    switch (backend) {
+      case 'openai-compatible':
+        requestBody = {
+          model: modelName,
+          messages: formattedMessages,
+          temperature: 0.7,
+          max_tokens: 800,
+        };
+        break;
+      case 'ollama':
+        requestBody = {
+          model: modelName,
+          messages: formattedMessages,
+          options: {
+            temperature: 0.7,
+            num_predict: 800,
+          }
+        };
+        break;
+      case 'lmstudio':
+      case 'unknown':
+      default:
+        requestBody = {
+          model: modelName,
+          messages: formattedMessages,
+          temperature: 0.7,
+          max_tokens: 800,
+        };
+        break;
+    }
+    
+    // Send the request
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: modelName,
-        messages,
-        temperature: 0.7,
-        max_tokens: 800,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('Mistral API error:', errorData);
+      console.error('LLM API error:', errorData);
       throw new Error(`Failed to generate text: ${errorData}`);
     }
 
+    // Parse the response
     const data = await response.json();
-    return data.choices[0]?.message?.content || 'No response generated';
+    
+    // Extract the generated text based on the detected backend
+    let generatedText = '';
+    
+    switch (backend) {
+      case 'openai-compatible':
+        generatedText = data.choices[0]?.message?.content || 'No response generated';
+        break;
+      case 'ollama':
+        generatedText = data.message?.content || data.response || 'No response generated';
+        break;
+      case 'lmstudio':
+        generatedText = data.choices[0]?.message?.content || 'No response generated';
+        break;
+      default:
+        generatedText = data.choices?.[0]?.message?.content || 
+                        data.message?.content || 
+                        data.response || 
+                        'No response generated';
+        break;
+    }
+    
+    return generatedText;
   } catch (error) {
-    console.error('Error generating text with local Mistral:', error);
-    return `Error: Could not connect to local Mistral model. Please ensure your local server is running at ${apiUrl}`;
+    console.error('Error generating text with local LLM:', error);
+    return `Error: Could not connect to local LLM model. Please ensure your local server is running at ${apiUrl}`;
   }
 }
 
