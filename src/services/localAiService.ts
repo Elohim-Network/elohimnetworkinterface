@@ -30,9 +30,9 @@ const getConfig = () => {
     }
   }
   
-  // Default configuration for Mac M1/M2
+  // Updated default configuration with user-specified URLs
   return {
-    mistralUrl: 'http://localhost:8080/v1/chat/completions',
+    mistralUrl: 'http://localhost:11434/v1/chat/completions',
     stableDiffusionUrl: 'http://localhost:7860/sdapi/v1/txt2img',
     mistralModel: 'mistral-7b',
     sdModel: 'stable-diffusion-v1-5'
