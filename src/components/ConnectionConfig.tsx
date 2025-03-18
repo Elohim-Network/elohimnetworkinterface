@@ -51,7 +51,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
   useBrowserVoice = false,
   onToggleBrowserVoice
 }) => {
-  const [mistralUrl, setMistralUrl] = useState('http://localhost:8080/v1/chat/completions');
+  const [mistralUrl, setMistralUrl] = useState('http://localhost:11434/v1/chat/completions');
   const [stableDiffusionUrl, setStableDiffusionUrl] = useState('http://localhost:7860/sdapi/v1/txt2img');
   const [mistralModel, setMistralModel] = useState('mistral-7b');
   const [sdModel, setSdModel] = useState('stable-diffusion-v1-5');
@@ -85,7 +85,18 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
     const savedPresets = localStorage.getItem('model-presets');
     if (savedPresets) {
       try {
-        setPresets(JSON.parse(savedPresets));
+        const parsedPresets = JSON.parse(savedPresets);
+        const updatedPresets = parsedPresets.map((preset: any) => {
+          if (preset.name === "Mac M1/M2 Default") {
+            return {
+              ...preset,
+              mistralUrl: 'http://localhost:11434/v1/chat/completions'
+            };
+          }
+          return preset;
+        });
+        setPresets(updatedPresets);
+        localStorage.setItem('model-presets', JSON.stringify(updatedPresets));
       } catch (e) {
         console.error('Error parsing saved presets:', e);
       }
@@ -93,7 +104,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       const defaultPresets = [
         {
           name: "Mac M1/M2 Default",
-          mistralUrl: 'http://localhost:8080/v1/chat/completions',
+          mistralUrl: 'http://localhost:11434/v1/chat/completions',
           stableDiffusionUrl: 'http://localhost:7860/sdapi/v1/txt2img',
           mistralModel: 'mistral-7b',
           sdModel: 'stable-diffusion-v1-5'
@@ -113,7 +124,6 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
     setApiKey(elevenLabsApiKey);
     setSelectedVoiceId(currentVoiceId);
     
-    // Load browser voices
     const storedBrowserVoices = browserVoiceService.getStoredVoices();
     setBrowserVoices(storedBrowserVoices);
     
@@ -132,7 +142,6 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
     localStorage.setItem('local-ai-config', JSON.stringify(config));
     onUpdate(config);
     
-    // Save voice settings if provided
     if (onUpdateApiKey && apiKey !== elevenLabsApiKey) {
       onUpdateApiKey(apiKey);
     }
@@ -141,7 +150,6 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       onUpdateVoice(selectedVoiceId);
     }
     
-    setIsOpen(false);
     toast.success('Settings updated');
   };
 
@@ -318,7 +326,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                 id="mistral-url"
                 value={mistralUrl}
                 onChange={(e) => setMistralUrl(e.target.value)}
-                placeholder="http://localhost:8080/v1/chat/completions"
+                placeholder="http://localhost:11434/v1/chat/completions"
               />
               <p className="text-xs text-muted-foreground">
                 The API endpoint for your local text AI model (Mistral, Llama, etc.)

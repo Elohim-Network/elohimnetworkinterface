@@ -30,7 +30,7 @@ const getConfig = () => {
     }
   }
   
-  // Updated default configuration with user-specified URLs
+  // Default configuration with the correct URL for Mistral
   return {
     mistralUrl: 'http://localhost:11434/v1/chat/completions',
     stableDiffusionUrl: 'http://localhost:7860/sdapi/v1/txt2img',
