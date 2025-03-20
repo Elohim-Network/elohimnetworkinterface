@@ -345,7 +345,7 @@ Best regards,
                 rows={8}
               />
               <p className="text-xs text-muted-foreground mt-1">
-                You can use placeholders like {{'{'}}{'{name}'}{'}'}}, {{'{'}}{'{email}'}{'}'}}, and {{'{'}}{'{company}'}}{'}'}}.
+                You can use placeholders like {"{{name}}"}, {"{{email}}"}, and {"{{company}}"}.
               </p>
             </div>
             
@@ -444,7 +444,7 @@ Best regards,
                     rows={8}
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    You can use placeholders like {{'{'}}{'{name}'}{'}'}}, {{'{'}}{'{email}'}{'}'}}, and {{'{'}}{'{company}'}}{'}'}}.
+                    You can use placeholders like {"{{name}}"}, {"{{email}}"}, and {"{{company}}"}.
                   </p>
                 </div>
                 
