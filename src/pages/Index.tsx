@@ -1,9 +1,14 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import ChatInterface from '@/components/ChatInterface';
+import BusinessTools from '@/components/BusinessTools';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
 const Index = () => {
+  const [activeView, setActiveView] = useState<'chat' | 'tools'>('chat');
+
   // Load correct configuration on component mount
   useEffect(() => {
     const savedConfig = localStorage.getItem('local-ai-config');
@@ -58,7 +63,28 @@ const Index = () => {
 
   return (
     <div className="h-screen w-screen overflow-hidden">
-      <ChatInterface />
+      <div className="h-full flex flex-col">
+        <div className="flex items-center justify-center border-b py-1 px-4">
+          <Tabs 
+            value={activeView} 
+            onValueChange={(value) => setActiveView(value as 'chat' | 'tools')}
+            className="w-auto"
+          >
+            <TabsList>
+              <TabsTrigger value="chat">Chat Interface</TabsTrigger>
+              <TabsTrigger value="tools">Business Tools</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+        
+        <div className="flex-1 overflow-hidden">
+          {activeView === 'chat' ? (
+            <ChatInterface />
+          ) : (
+            <BusinessTools />
+          )}
+        </div>
+      </div>
     </div>
   );
 };
