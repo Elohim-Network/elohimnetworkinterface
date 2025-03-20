@@ -5,6 +5,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import LeadsManagement from './LeadsManagement';
 import WebScraper from './WebScraper';
 import EmailCampaign from './EmailCampaign';
+import CalendarTasks from './CalendarTasks';
+import Integrations from './Integrations';
 
 const BusinessTools: React.FC = () => {
   const [activeTab, setActiveTab] = useState('leads');
@@ -20,6 +22,8 @@ const BusinessTools: React.FC = () => {
           <TabsTrigger value="leads">Leads</TabsTrigger>
           <TabsTrigger value="scraper">Web Scraper</TabsTrigger>
           <TabsTrigger value="email">Email Campaign</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar & Tasks</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
         </TabsList>
         
         <TabsContent value="leads" className="flex-1 overflow-auto">
@@ -32,6 +36,14 @@ const BusinessTools: React.FC = () => {
         
         <TabsContent value="email" className="flex-1 overflow-auto">
           <EmailCampaign />
+        </TabsContent>
+        
+        <TabsContent value="calendar" className="flex-1 overflow-auto">
+          <CalendarTasks />
+        </TabsContent>
+        
+        <TabsContent value="integrations" className="flex-1 overflow-auto">
+          <Integrations />
         </TabsContent>
       </Tabs>
     </div>
