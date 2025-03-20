@@ -7,6 +7,7 @@ import WebScraper from './WebScraper';
 import EmailCampaign from './EmailCampaign';
 import CalendarTasks from './CalendarTasks';
 import Integrations from './Integrations';
+import AIPodcasting from './AIPodcasting';
 
 const BusinessTools: React.FC = () => {
   const [activeTab, setActiveTab] = useState('leads');
@@ -24,6 +25,7 @@ const BusinessTools: React.FC = () => {
           <TabsTrigger value="email">Email Campaign</TabsTrigger>
           <TabsTrigger value="calendar">Calendar & Tasks</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          <TabsTrigger value="podcasting">AI Podcasting</TabsTrigger>
         </TabsList>
         
         <TabsContent value="leads" className="flex-1 overflow-auto">
@@ -44,6 +46,10 @@ const BusinessTools: React.FC = () => {
         
         <TabsContent value="integrations" className="flex-1 overflow-auto">
           <Integrations />
+        </TabsContent>
+        
+        <TabsContent value="podcasting" className="flex-1 overflow-auto">
+          <AIPodcasting />
         </TabsContent>
       </Tabs>
     </div>
