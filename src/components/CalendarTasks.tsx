@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -52,6 +51,7 @@ const CalendarTasks: React.FC = () => {
       taskDescription: "",
       taskPriority: "medium" as const,
       taskRelatedTo: "",
+      taskTime: "",
       eventTitle: "",
       eventDescription: "",
       eventLocation: "",
@@ -62,7 +62,6 @@ const CalendarTasks: React.FC = () => {
   });
 
   useEffect(() => {
-    // Load tasks and events from localStorage
     const savedTasks = localStorage.getItem('elohim-tasks');
     const savedEvents = localStorage.getItem('elohim-events');
     
@@ -83,7 +82,6 @@ const CalendarTasks: React.FC = () => {
     }
   }, []);
 
-  // Save to localStorage whenever tasks or events change
   useEffect(() => {
     localStorage.setItem('elohim-tasks', JSON.stringify(tasks));
   }, [tasks]);
@@ -110,7 +108,8 @@ const CalendarTasks: React.FC = () => {
       taskTitle: "",
       taskDescription: "",
       taskPriority: "medium",
-      taskRelatedTo: ""
+      taskRelatedTo: "",
+      taskTime: ""
     });
     toast.success('Task added successfully');
   };
@@ -160,10 +159,8 @@ const CalendarTasks: React.FC = () => {
   };
 
   const filteredTasks = tasks.filter(task => {
-    // Filter by selected date
     const isMatchingDate = task.date === format(selectedDate, 'yyyy-MM-dd');
     
-    // Apply status filter if needed
     if (taskFilter === 'all') return isMatchingDate;
     if (taskFilter === 'completed') return isMatchingDate && task.completed;
     if (taskFilter === 'pending') return isMatchingDate && !task.completed;
@@ -175,7 +172,6 @@ const CalendarTasks: React.FC = () => {
     return events.filter(event => event.date === format(selectedDate, 'yyyy-MM-dd'));
   };
 
-  // Priority colors
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'high': return 'text-red-500';
@@ -188,7 +184,6 @@ const CalendarTasks: React.FC = () => {
   return (
     <div className="container mx-auto p-4 max-w-7xl">
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Calendar Column */}
         <div className="md:w-1/3">
           <Card>
             <CardHeader>
@@ -223,7 +218,6 @@ const CalendarTasks: React.FC = () => {
           </Card>
         </div>
 
-        {/* Tasks & Events Column */}
         <div className="md:w-2/3">
           <Tabs value={activeView} onValueChange={(value) => setActiveView(value as 'calendar' | 'tasks')}>
             <div className="flex justify-between items-center mb-4">
@@ -374,7 +368,6 @@ const CalendarTasks: React.FC = () => {
         </div>
       </div>
 
-      {/* Add Task Form Dialog */}
       {showAddTask && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-background rounded-lg shadow-lg w-full max-w-md overflow-hidden">
@@ -460,7 +453,6 @@ const CalendarTasks: React.FC = () => {
         </div>
       )}
 
-      {/* Add Event Form Dialog */}
       {showAddEvent && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-background rounded-lg shadow-lg w-full max-w-md overflow-hidden">
