@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, Bot, Rocket, Shield, Sparkles, Star, Zap } from 'lucide-react';
+import { ArrowRight, Bot, CheckCheck, Rocket, Shield, Sparkles, Star, Zap } from 'lucide-react';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -114,15 +114,15 @@ const Landing = () => {
                 </div>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>All core features</span>
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>AI Chat Assistant</span>
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>Basic integrations</span>
                   </li>
                 </ul>
@@ -145,19 +145,19 @@ const Landing = () => {
                 </div>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>All Startup features</span>
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>11 Labs voice integration</span>
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>Advanced business modules</span>
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>White-label options</span>
                   </li>
                 </ul>
@@ -181,15 +181,15 @@ const Landing = () => {
                 </div>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>All core features</span>
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>AI Chat Assistant</span>
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>Basic integrations</span>
                   </li>
                 </ul>
@@ -212,19 +212,19 @@ const Landing = () => {
                 </div>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>All Startup features</span>
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>11 Labs voice integration</span>
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>Advanced business modules</span>
                   </li>
                   <li className="flex items-center">
-                    <Check className="h-5 w-5 text-green-500 mr-2" />
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
                     <span>White-label options</span>
                   </li>
                 </ul>
@@ -358,3 +358,4 @@ const Landing = () => {
 };
 
 export default Landing;
+
