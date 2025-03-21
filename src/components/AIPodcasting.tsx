@@ -1,502 +1,920 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { Mic, Play, Pause, Phone, Upload, RefreshCw, Save, FileAudio, Sparkles, Radio, Headphones, Share2 } from 'lucide-react';
+import { Mic, Play, Pause, PhoneCall, Upload, Book, BookOpen, PenTool, Sparkles, ArrowRight, Phone, BookText, BookmarkPlus, RefreshCw, Save, Send } from 'lucide-react';
 import { toast } from 'sonner';
-import VoiceRecorder from './VoiceRecorder';
-import { useVoice } from '@/hooks/useVoice';
 
 const AIPodcasting: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('generator');
-  const [recording, setRecording] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [podcastTopic, setPodcastTopic] = useState('');
-  const [podcastDuration, setPodcastDuration] = useState(15); // minutes
-  const [selectedVoices, setSelectedVoices] = useState<string[]>([]);
-  const [generatedContent, setGeneratedContent] = useState('');
-  const { availableVoices, speak, stopSpeaking } = useVoice();
-
-  // Sample podcast templates
-  const podcastTemplates = [
-    { id: 'interview', name: 'Interview Style', description: 'Q&A format with host and guest' },
-    { id: 'debate', name: 'Debate Format', description: 'Two opposing viewpoints with moderation' },
-    { id: 'storytelling', name: 'Narrative Storytelling', description: 'Immersive story-based podcast' },
-    { id: 'news', name: 'News Roundup', description: 'Current events with analysis' },
-    { id: 'educational', name: 'Educational Content', description: 'In-depth exploration of a topic' }
-  ];
-
-  // Sample AI personalities
-  const aiPersonalities = [
-    { id: 'expert', name: 'Industry Expert', voice: 'Roger' },
-    { id: 'journalist', name: 'Investigative Journalist', voice: 'Sarah' },
-    { id: 'comedian', name: 'Comedian', voice: 'Charlie' },
-    { id: 'historian', name: 'Historian', voice: 'George' },
-    { id: 'scientist', name: 'Scientist', voice: 'Laura' }
-  ];
-
-  const handleGeneratePodcast = () => {
-    if (!podcastTopic) {
-      toast.error('Please enter a podcast topic');
+  const [activeTab, setActiveTab] = useState('content-generation');
+  const [isRecording, setIsRecording] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [voiceModel, setVoiceModel] = useState('browser-voice');
+  const [selectedVoice, setSelectedVoice] = useState('');
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [bookTitle, setBookTitle] = useState('');
+  const [bookDescription, setBookDescription] = useState('');
+  const [bookKeywords, setBookKeywords] = useState('');
+  const [bookCategory, setBookCategory] = useState('non-fiction');
+  
+  // Simulate content generation process
+  const simulateGeneration = () => {
+    setGenerationProgress(0);
+    const interval = setInterval(() => {
+      setGenerationProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          toast.success('Content generated successfully!');
+          return 100;
+        }
+        return prev + 5;
+      });
+    }, 300);
+  };
+  
+  const toggleRecording = () => {
+    setIsRecording(!isRecording);
+    if (!isRecording) {
+      toast.info('Recording started. Please speak into your microphone.');
+    } else {
+      toast.success('Recording saved!');
+    }
+  };
+  
+  const togglePlayback = () => {
+    setIsPlaying(!isPlaying);
+    if (!isPlaying) {
+      toast.info('Playing audio...');
+    } else {
+      toast.info('Playback paused.');
+    }
+  };
+  
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setUploadedFiles(files);
+      toast.success(`${files.length} file(s) uploaded successfully!`);
+    }
+  };
+  
+  const initiatePhoneCall = () => {
+    toast.info('Initiating phone call simulation...', {
+      description: 'This is a simulated feature. In a real application, this would connect to a VoIP service.'
+    });
+  };
+  
+  const publishContent = () => {
+    toast.success('Content published successfully!', {
+      description: 'Your podcast/book has been prepared for distribution.'
+    });
+  };
+  
+  const generateBook = () => {
+    if (!bookTitle.trim()) {
+      toast.error('Please enter a book title');
       return;
     }
-
-    toast.info('Generating podcast content...');
     
-    // Simulate API call with a timeout
-    setTimeout(() => {
-      setGeneratedContent(`# AI-Generated Podcast: ${podcastTopic}
-
-## Introduction (2 minutes)
-- Welcome to this episode about "${podcastTopic}"
-- Brief overview of what we'll cover today
-- Introduction of today's guests and their expertise
-
-## Main Discussion (${podcastDuration - 5} minutes)
-- Key points about ${podcastTopic}
-- Current trends and developments
-- Expert insights and analysis
-- Real-world examples and case studies
-
-## Conclusion (3 minutes)
-- Summary of key takeaways
-- Call to action for listeners
-- Preview of upcoming episodes
-
-*This is a generated script outline that can be customized further or used for recording.*`);
-      
-      toast.success('Podcast content generated successfully!');
-    }, 2000);
-  };
-
-  const handleRecordToggle = () => {
-    if (recording) {
-      setRecording(false);
-      toast.success('Recording stopped. Audio saved to your library.');
-    } else {
-      setRecording(true);
-      toast.info('Recording started. Speak into your microphone.');
-    }
-  };
-
-  const handlePlayToggle = () => {
-    if (playing) {
-      setPlaying(false);
-      stopSpeaking();
-      toast.info('Playback stopped');
-    } else {
-      setPlaying(true);
-      speak(generatedContent);
-      toast.info('Playing generated podcast...');
-      
-      // Simulate ending after some time
-      setTimeout(() => {
-        setPlaying(false);
-      }, 5000);
-    }
-  };
-
-  const handlePublish = () => {
-    toast.info('Preparing podcast for publishing...');
+    toast.info('Starting book generation process...', {
+      description: 'This may take a few minutes. You can continue using other features while we work on your book.'
+    });
     
-    setTimeout(() => {
-      toast.success('Podcast published successfully to your selected platforms!');
-    }, 2000);
+    simulateGeneration();
   };
 
   return (
-    <div className="p-4 h-full flex flex-col">
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold">AI Podcasting Studio</h2>
-        <p className="text-muted-foreground">Create professional podcasts with AI-powered tools</p>
+    <div className="container mx-auto p-4 max-w-7xl">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold mb-2">AI Podcasting & Publishing Studio</h1>
+        <p className="text-muted-foreground">Create professional podcasts and books with AI assistance.</p>
       </div>
-
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="grid grid-cols-5 mb-4">
-          <TabsTrigger value="generator">
-            <Sparkles className="h-4 w-4 mr-2" />
-            Content Generator
-          </TabsTrigger>
-          <TabsTrigger value="voices">
-            <Headphones className="h-4 w-4 mr-2" />
-            Voice Studio
-          </TabsTrigger>
-          <TabsTrigger value="recording">
-            <Radio className="h-4 w-4 mr-2" />
-            Recording Studio
-          </TabsTrigger>
-          <TabsTrigger value="calls">
-            <Phone className="h-4 w-4 mr-2" />
-            Phone Integration
-          </TabsTrigger>
-          <TabsTrigger value="publishing">
-            <Share2 className="h-4 w-4 mr-2" />
-            Publishing
-          </TabsTrigger>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-5 mb-6">
+          <TabsTrigger value="content-generation">Content Generation</TabsTrigger>
+          <TabsTrigger value="voice-studio">Voice Studio</TabsTrigger>
+          <TabsTrigger value="recording-studio">Recording Studio</TabsTrigger>
+          <TabsTrigger value="phone-integration">Phone Integration</TabsTrigger>
+          <TabsTrigger value="publishing">Publishing</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="generator" className="flex-1 space-y-4 overflow-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Podcast Generator</CardTitle>
-              <CardDescription>Generate AI-powered podcast content based on your topic</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="podcast-topic">Podcast Topic</Label>
-                <Input 
-                  id="podcast-topic" 
-                  placeholder="Enter your podcast topic or theme" 
-                  value={podcastTopic}
-                  onChange={(e) => setPodcastTopic(e.target.value)}
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Podcast Duration (minutes)</Label>
-                <div className="flex items-center space-x-4">
-                  <Slider 
-                    value={[podcastDuration]} 
-                    min={5} 
-                    max={60} 
-                    step={5}
-                    onValueChange={(values) => setPodcastDuration(values[0])}
-                    className="flex-1" 
-                  />
-                  <span className="w-12 text-center">{podcastDuration}</span>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Podcast Format</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {podcastTemplates.map(template => (
-                    <Card key={template.id} className="cursor-pointer hover:bg-muted/50">
-                      <CardHeader className="p-3">
-                        <CardTitle className="text-sm">{template.name}</CardTitle>
-                        <CardDescription className="text-xs">{template.description}</CardDescription>
-                      </CardHeader>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>AI Personalities</Label>
-                <div className="flex flex-wrap gap-2">
-                  {aiPersonalities.map(personality => (
-                    <Badge 
-                      key={personality.id} 
-                      variant={selectedVoices.includes(personality.id) ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => {
-                        if (selectedVoices.includes(personality.id)) {
-                          setSelectedVoices(selectedVoices.filter(id => id !== personality.id));
-                        } else {
-                          setSelectedVoices([...selectedVoices, personality.id]);
-                        }
-                      }}
-                    >
-                      {personality.name} ({personality.voice})
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button onClick={handleGeneratePodcast} className="w-full">
-                <Sparkles className="h-4 w-4 mr-2" />
-                Generate Podcast Content
-              </Button>
-            </CardFooter>
-          </Card>
-          
-          {generatedContent && (
+        
+        {/* Content Generation Tab */}
+        <TabsContent value="content-generation" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Card>
               <CardHeader>
-                <CardTitle>Generated Content</CardTitle>
-                <CardDescription>Your AI-generated podcast script</CardDescription>
+                <CardTitle>AI Podcast Generator</CardTitle>
+                <CardDescription>Create podcast episodes with AI assistance</CardDescription>
               </CardHeader>
-              <CardContent>
-                <Textarea
-                  className="min-h-[200px] font-mono text-sm"
-                  value={generatedContent}
-                  onChange={(e) => setGeneratedContent(e.target.value)}
-                />
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="podcast-topic">Topic or Theme</Label>
+                  <Input id="podcast-topic" placeholder="Enter the main topic of your podcast" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="podcast-style">Podcast Style</Label>
+                  <Select defaultValue="conversational">
+                    <SelectTrigger id="podcast-style">
+                      <SelectValue placeholder="Select style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="conversational">Conversational</SelectItem>
+                      <SelectItem value="interview">Interview Style</SelectItem>
+                      <SelectItem value="storytelling">Storytelling</SelectItem>
+                      <SelectItem value="educational">Educational</SelectItem>
+                      <SelectItem value="debate">Debate Format</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="podcast-length">Episode Length (minutes)</Label>
+                  <Slider defaultValue={[15]} max={60} step={5} />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>5 min</span>
+                    <span>30 min</span>
+                    <span>60 min</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="podcast-notes">Additional Notes</Label>
+                  <Textarea id="podcast-notes" placeholder="Enter any specific points you want to cover or special instructions" />
+                </div>
               </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={handlePlayToggle}>
-                  {playing ? (
-                    <>
-                      <Pause className="h-4 w-4 mr-2" />
-                      Stop Preview
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-4 w-4 mr-2" />
-                      Audio Preview
-                    </>
-                  )}
-                </Button>
-                <Button onClick={() => toast.success('Content saved as draft')}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save as Draft
+              <CardFooter>
+                <Button className="w-full" onClick={simulateGeneration}>
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Generate Podcast Content
                 </Button>
               </CardFooter>
             </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="voices" className="flex-1 space-y-4 overflow-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Voice Studio</CardTitle>
-              <CardDescription>Customize AI voices and record your own voice samples</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <VoiceRecorder onVoiceCreated={() => toast.success('Voice recorded successfully')} />
-              
-              <Separator className="my-4" />
-              
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <h3 className="font-medium">Available Voices</h3>
-                  <Button variant="outline" size="sm" onClick={() => toast.info('Refreshing voices...')}>
-                    <RefreshCw className="h-3 w-3 mr-2" />
-                    Refresh
-                  </Button>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>eBook Generator</CardTitle>
+                <CardDescription>Create publishable ebooks with AI assistance</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="book-title">Book Title</Label>
+                  <Input 
+                    id="book-title" 
+                    placeholder="Enter your book title" 
+                    value={bookTitle}
+                    onChange={(e) => setBookTitle(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="book-category">Book Category</Label>
+                  <Select 
+                    value={bookCategory}
+                    onValueChange={setBookCategory}
+                  >
+                    <SelectTrigger id="book-category">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fiction">Fiction</SelectItem>
+                      <SelectItem value="non-fiction">Non-Fiction</SelectItem>
+                      <SelectItem value="self-help">Self-Help</SelectItem>
+                      <SelectItem value="business">Business</SelectItem>
+                      <SelectItem value="technical">Technical/Educational</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="book-description">Brief Description</Label>
+                  <Textarea 
+                    id="book-description" 
+                    placeholder="What is your book about?" 
+                    value={bookDescription}
+                    onChange={(e) => setBookDescription(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="book-keywords">Keywords (comma separated)</Label>
+                  <Input 
+                    id="book-keywords" 
+                    placeholder="Enter keywords for better results" 
+                    value={bookKeywords}
+                    onChange={(e) => setBookKeywords(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Switch id="auto-format" />
+                    <Label htmlFor="auto-format">Auto-format for KDP</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="generate-cover" defaultChecked />
+                    <Label htmlFor="generate-cover">Generate Cover</Label>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button className="w-full" onClick={generateBook}>
+                  <BookText className="h-4 w-4 mr-2" />
+                  Generate eBook
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+          
+          {generationProgress > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Generation Progress</CardTitle>
+                <CardDescription>Your content is being created</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Progress value={generationProgress} className="h-2" />
+                <div className="flex justify-between mt-2">
+                  <span className="text-sm text-muted-foreground">Processing...</span>
+                  <span className="text-sm font-medium">{generationProgress}%</span>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  {availableVoices.slice(0, 6).map((voice) => (
-                    <Card key={voice.voice_id} className="cursor-pointer hover:bg-muted/50">
-                      <CardHeader className="p-3">
-                        <div className="flex justify-between items-center">
-                          <CardTitle className="text-sm">{voice.name}</CardTitle>
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <Play className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <CardDescription className="text-xs">{voice.category || "Standard Voice"}</CardDescription>
-                      </CardHeader>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                {generationProgress === 100 && (
+                  <div className="mt-4 space-y-2">
+                    <p className="text-sm text-green-600 font-medium">Content generation complete!</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Outline Created</Badge>
+                      <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Chapters Generated</Badge>
+                      <Badge className="bg-green-100 text-green-800 hover:bg-green-200">Cover Designed</Badge>
+                      <Badge className="bg-green-100 text-green-800 hover:bg-green-200">KDP Formatting</Badge>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+              
+              {generationProgress === 100 && (
+                <CardFooter className="flex justify-end space-x-2">
+                  <Button variant="outline">
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Draft
+                  </Button>
+                  <Button>
+                    <ArrowRight className="h-4 w-4 mr-2" />
+                    Continue to Publishing
+                  </Button>
+                </CardFooter>
+              )}
+            </Card>
+          )}
         </TabsContent>
-
-        <TabsContent value="recording" className="flex-1 space-y-4 overflow-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recording Studio</CardTitle>
-              <CardDescription>Professional-grade multi-channel recording with AI enhancements</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-muted p-6 rounded-md flex flex-col items-center justify-center">
-                <div className={`relative w-32 h-32 rounded-full flex items-center justify-center border-4 ${recording ? 'border-red-500 animate-pulse' : 'border-muted-foreground'}`}>
-                  <Button 
-                    variant={recording ? "destructive" : "default"}
-                    size="icon"
-                    className="h-20 w-20 rounded-full"
-                    onClick={handleRecordToggle}
+        
+        {/* Voice Studio Tab */}
+        <TabsContent value="voice-studio" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Voice Selection</CardTitle>
+                <CardDescription>Choose or create a voice for your content</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="voice-source">Voice Source</Label>
+                  <Select 
+                    value={voiceModel}
+                    onValueChange={setVoiceModel}
                   >
-                    {recording ? (
-                      <Pause className="h-10 w-10" />
+                    <SelectTrigger id="voice-source">
+                      <SelectValue placeholder="Select voice source" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="browser-voice">Browser Voice (Free)</SelectItem>
+                      <SelectItem value="elevenlabs">ElevenLabs (Premium)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {voiceModel === 'browser-voice' && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="browser-voice">Browser Voice</Label>
+                      <Select defaultValue="default">
+                        <SelectTrigger id="browser-voice">
+                          <SelectValue placeholder="Select voice" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="default">Default Voice</SelectItem>
+                          <SelectItem value="custom-1">My Custom Voice 1</SelectItem>
+                          <SelectItem value="custom-2">My Custom Voice 2</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="border rounded-md p-3 bg-muted/30">
+                      <h3 className="text-sm font-medium mb-2">Record New Voice</h3>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Record your voice for use in podcasts. For best quality, use a quiet environment and good microphone.
+                      </p>
+                      <Button variant="outline" className="w-full" onClick={toggleRecording}>
+                        <Mic className={`h-4 w-4 mr-2 ${isRecording ? 'text-red-500' : ''}`} />
+                        {isRecording ? 'Stop Recording' : 'Start Recording'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {voiceModel === 'elevenlabs' && (
+                  <div className="space-y-4">
+                    <div className="border rounded-md p-3 bg-amber-50/30">
+                      <p className="text-xs text-amber-800">
+                        ElevenLabs requires an API key. You can set this in the Settings menu.
+                      </p>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="elevenlabs-voice">ElevenLabs Voice</Label>
+                      <Select 
+                        value={selectedVoice}
+                        onValueChange={setSelectedVoice}
+                      >
+                        <SelectTrigger id="elevenlabs-voice">
+                          <SelectValue placeholder="Select voice" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sarah">Sarah</SelectItem>
+                          <SelectItem value="adam">Adam</SelectItem>
+                          <SelectItem value="custom-cloned">My Cloned Voice</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="voice-samples">Clone Your Voice</Label>
+                      <Input 
+                        id="voice-samples" 
+                        type="file" 
+                        accept=".mp3,.wav,.m4a" 
+                        onChange={handleFileUpload}
+                        multiple
+                        className="cursor-pointer"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Upload 1-2 minutes of clear voice recordings for best results.
+                      </p>
+                      
+                      <Button className="w-full mt-2" disabled={uploadedFiles.length === 0}>
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Create Voice Clone
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Voice Settings</CardTitle>
+                <CardDescription>Fine-tune your voice settings</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label htmlFor="voice-speed">Speaking Speed</Label>
+                    <span className="text-xs text-muted-foreground">Normal</span>
+                  </div>
+                  <Slider defaultValue={[1]} min={0.5} max={2} step={0.1} />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label htmlFor="voice-pitch">Voice Pitch</Label>
+                    <span className="text-xs text-muted-foreground">Normal</span>
+                  </div>
+                  <Slider defaultValue={[1]} min={0.5} max={1.5} step={0.1} />
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <Label htmlFor="voice-stability">Stability</Label>
+                    <span className="text-xs text-muted-foreground">Medium</span>
+                  </div>
+                  <Slider defaultValue={[0.5]} min={0} max={1} step={0.1} />
+                  <p className="text-xs text-muted-foreground">
+                    Higher stability makes voice more consistent but less expressive
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="test-text">Test Voice</Label>
+                  <Textarea 
+                    id="test-text" 
+                    placeholder="Enter text to test the selected voice"
+                    defaultValue="Hello! This is a test of my voice for podcasting."
+                  />
+                </div>
+                
+                <div className="flex justify-center">
+                  <Button variant="outline" onClick={togglePlayback}>
+                    {isPlaying ? (
+                      <>
+                        <Pause className="h-4 w-4 mr-2" />
+                        Pause
+                      </>
                     ) : (
-                      <Mic className="h-10 w-10" />
+                      <>
+                        <Play className="h-4 w-4 mr-2" />
+                        Play Test
+                      </>
                     )}
                   </Button>
                 </div>
-                <div className="mt-4 text-center">
-                  {recording ? (
-                    <p className="text-red-500 font-medium">Recording in progress...</p>
-                  ) : (
-                    <p className="text-muted-foreground">Press to start recording</p>
-                  )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        {/* Recording Studio Tab */}
+        <TabsContent value="recording-studio" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Multi-Channel Recording Studio</CardTitle>
+              <CardDescription>Professional-grade audio recording capabilities</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="border rounded-md p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium">Microphone Input</h3>
+                    <Badge>Active</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="mic-input">Select Microphone</Label>
+                    <Select defaultValue="default">
+                      <SelectTrigger id="mic-input">
+                        <SelectValue placeholder="Select microphone" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Default Microphone</SelectItem>
+                        <SelectItem value="airpods">AirPods Pro</SelectItem>
+                        <SelectItem value="headset">External Headset</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label>Input Volume</Label>
+                      <span className="text-xs text-muted-foreground">75%</span>
+                    </div>
+                    <Slider defaultValue={[75]} max={100} />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="noise-reduction-mic" defaultChecked />
+                    <Label htmlFor="noise-reduction-mic">Noise Reduction</Label>
+                  </div>
+                </div>
+                
+                <div className="border rounded-md p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium">AI Voice Output</h3>
+                    <Badge variant="outline">Ready</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ai-voice">AI Voice</Label>
+                    <Select defaultValue="custom">
+                      <SelectTrigger id="ai-voice">
+                        <SelectValue placeholder="Select AI voice" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="custom">My Custom Voice</SelectItem>
+                        <SelectItem value="sarah">Sarah</SelectItem>
+                        <SelectItem value="adam">Adam</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label>Output Volume</Label>
+                      <span className="text-xs text-muted-foreground">65%</span>
+                    </div>
+                    <Slider defaultValue={[65]} max={100} />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="emotion-detection" defaultChecked />
+                    <Label htmlFor="emotion-detection">Emotion Detection</Label>
+                  </div>
+                </div>
+                
+                <div className="border rounded-md p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium">System Audio</h3>
+                    <Badge variant="secondary">Optional</Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="system-audio">System Audio Source</Label>
+                    <Select defaultValue="all">
+                      <SelectTrigger id="system-audio">
+                        <SelectValue placeholder="Select audio source" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All System Audio</SelectItem>
+                        <SelectItem value="music">Music Player Only</SelectItem>
+                        <SelectItem value="browser">Browser Only</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label>Background Level</Label>
+                      <span className="text-xs text-muted-foreground">30%</span>
+                    </div>
+                    <Slider defaultValue={[30]} max={100} />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="auto-ducking" defaultChecked />
+                    <Label htmlFor="auto-ducking">Auto Ducking</Label>
+                  </div>
                 </div>
               </div>
               
-              <div className="space-y-4 bg-card border rounded-md p-4">
-                <h3 className="font-medium">Recording Settings</h3>
+              <div className="border rounded-md p-4 mt-4">
+                <h3 className="font-medium mb-2">Recording Controls</h3>
+                <div className="flex flex-wrap gap-3 justify-center">
+                  <Button variant={isRecording ? "destructive" : "default"} onClick={toggleRecording}>
+                    {isRecording ? 'Stop Recording' : 'Start Recording'}
+                  </Button>
+                  <Button variant="outline" disabled={!isRecording}>
+                    Pause
+                  </Button>
+                  <Button variant="outline" disabled={isRecording}>
+                    <Play className="h-4 w-4 mr-2" />
+                    Play Last Recording
+                  </Button>
+                  <Button variant="outline" disabled={isRecording}>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save as MP3
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        {/* Phone Integration Tab */}
+        <TabsContent value="phone-integration" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Call Integration</CardTitle>
+                <CardDescription>Conduct phone interviews for your podcast</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="call-type">Call Type</Label>
+                  <Select defaultValue="simulated">
+                    <SelectTrigger id="call-type">
+                      <SelectValue placeholder="Select call type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="simulated">Simulated Call (Free)</SelectItem>
+                      <SelectItem value="voip">VoIP Call (Premium)</SelectItem>
+                      <SelectItem value="twilio">Twilio Integration (Premium)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Simulated calls use browser audio and don't require phone integration
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="phone-number">Phone Number or Contact</Label>
+                  <Input id="phone-number" placeholder="Enter phone number or contact name" />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="call-purpose">Call Purpose</Label>
+                  <Select defaultValue="interview">
+                    <SelectTrigger id="call-purpose">
+                      <SelectValue placeholder="Select purpose" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="interview">Podcast Interview</SelectItem>
+                      <SelectItem value="discussion">Discussion</SelectItem>
+                      <SelectItem value="qa">Q&A Session</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="call-recording">Recording Options</Label>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="record-call" defaultChecked />
+                    <Label htmlFor="record-call">Record Call</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="transcribe-call" defaultChecked />
+                    <Label htmlFor="transcribe-call">Auto-Transcribe</Label>
+                  </div>
+                </div>
+                
+                <Button onClick={initiatePhoneCall} className="w-full">
+                  <PhoneCall className="h-4 w-4 mr-2" />
+                  Initiate Call
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Voicemail to Podcast</CardTitle>
+                <CardDescription>Turn voicemails into podcast content</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 border rounded-md bg-muted/30 space-y-3">
+                  <h3 className="text-sm font-medium">How It Works</h3>
+                  <ol className="space-y-2 text-sm pl-5 list-decimal">
+                    <li>Upload voicemail recordings or collect listener messages</li>
+                    <li>AI analyzes content and prepares a response</li>
+                    <li>Record your response or generate an AI response</li>
+                    <li>Create a Q&A or discussion-style podcast automatically</li>
+                  </ol>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="voicemail-files">Upload Voicemail Files</Label>
+                  <Input 
+                    id="voicemail-files" 
+                    type="file" 
+                    accept=".mp3,.wav,.m4a" 
+                    onChange={handleFileUpload}
+                    multiple 
+                    className="cursor-pointer"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="voicemail-format">Podcast Format</Label>
+                  <Select defaultValue="qa">
+                    <SelectTrigger id="voicemail-format">
+                      <SelectValue placeholder="Select format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="qa">Q&A Style</SelectItem>
+                      <SelectItem value="discussion">Discussion</SelectItem>
+                      <SelectItem value="interview">Interview Format</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="response-type">Response Type</Label>
+                  <Select defaultValue="ai">
+                    <SelectTrigger id="response-type">
+                      <SelectValue placeholder="Select response type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ai">AI Generated</SelectItem>
+                      <SelectItem value="record">Record Your Response</SelectItem>
+                      <SelectItem value="mixed">Mixed (AI + Your Recording)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <Button 
+                  className="w-full" 
+                  disabled={uploadedFiles.length === 0}
+                  onClick={simulateGeneration}
+                >
+                  <Book className="h-4 w-4 mr-2" />
+                  Create Voicemail Podcast
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        {/* Publishing Tab */}
+        <TabsContent value="publishing" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Publish Your Content</CardTitle>
+              <CardDescription>Distribute your podcast or ebook to various platforms</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Podcast Publishing</h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="podcast-title">Podcast Title</Label>
+                    <Input id="podcast-title" placeholder="Enter podcast title" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="podcast-description">Description</Label>
+                    <Textarea id="podcast-description" placeholder="Enter podcast description" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="podcast-category">Category</Label>
+                    <Select defaultValue="education">
+                      <SelectTrigger id="podcast-category">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="education">Education</SelectItem>
+                        <SelectItem value="business">Business</SelectItem>
+                        <SelectItem value="technology">Technology</SelectItem>
+                        <SelectItem value="entertainment">Entertainment</SelectItem>
+                        <SelectItem value="news">News & Politics</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Publish To</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Switch id="publish-spotify" defaultChecked />
+                        <Label htmlFor="publish-spotify">Spotify</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="publish-apple" defaultChecked />
+                        <Label htmlFor="publish-apple">Apple Podcasts</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="publish-youtube" />
+                        <Label htmlFor="publish-youtube">YouTube</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="publish-rss" defaultChecked />
+                        <Label htmlFor="publish-rss">Generate RSS Feed</Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Record Microphone</Label>
-                      <p className="text-xs text-muted-foreground">Your voice input</p>
-                    </div>
-                    <Switch checked={true} />
+                  <h3 className="text-lg font-medium">Book Publishing</h3>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="book-title-final">Book Title</Label>
+                    <Input id="book-title-final" placeholder="Enter book title" value={bookTitle} readOnly />
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Record AI Voices</Label>
-                      <p className="text-xs text-muted-foreground">Generated AI speech</p>
-                    </div>
-                    <Switch checked={true} />
+                  <div className="space-y-2">
+                    <Label htmlFor="book-subtitle">Subtitle (Optional)</Label>
+                    <Input id="book-subtitle" placeholder="Enter book subtitle" />
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Record System Audio</Label>
-                      <p className="text-xs text-muted-foreground">Music and sound effects</p>
+                  <div className="space-y-2">
+                    <Label htmlFor="book-formats">Book Formats</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Switch id="format-kindle" defaultChecked />
+                        <Label htmlFor="format-kindle">Kindle eBook</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="format-pdf" defaultChecked />
+                        <Label htmlFor="format-pdf">PDF</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="format-paperback" />
+                        <Label htmlFor="format-paperback">Paperback</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="format-audiobook" />
+                        <Label htmlFor="format-audiobook">Audiobook</Label>
+                      </div>
                     </div>
-                    <Switch checked={true} />
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>AI Noise Reduction</Label>
-                      <p className="text-xs text-muted-foreground">Automatically clean audio</p>
+                  <div className="space-y-2">
+                    <Label>Distribution Channels</Label>
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Switch id="dist-amazon" defaultChecked />
+                        <Label htmlFor="dist-amazon">Amazon KDP</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="dist-ingramspark" />
+                        <Label htmlFor="dist-ingramspark">IngramSpark</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Switch id="dist-direct" defaultChecked />
+                        <Label htmlFor="dist-direct">Direct Download</Label>
+                      </div>
                     </div>
-                    <Switch checked={true} />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="generate-extras">Additional Outputs</Label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className="flex items-center space-x-2">
+                      <Switch id="gen-blog" defaultChecked />
+                      <Label htmlFor="gen-blog">Generate Blog Post</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch id="gen-social" defaultChecked />
+                      <Label htmlFor="gen-social">Social Media Posts</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch id="gen-transcript" defaultChecked />
+                      <Label htmlFor="gen-transcript">Full Transcript</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch id="gen-seo" defaultChecked />
+                      <Label htmlFor="gen-seo">SEO Metadata</Label>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t">
+                  <div className="flex justify-end gap-3">
+                    <Button variant="outline">
+                      <Save className="h-4 w-4 mr-2" />
+                      Save Draft
+                    </Button>
+                    <Button onClick={publishContent}>
+                      <Upload className="h-4 w-4 mr-2" />
+                      Publish Content
+                    </Button>
                   </div>
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline">
-                <FileAudio className="h-4 w-4 mr-2" />
-                View Recordings
-              </Button>
-              <Button onClick={() => toast.success('Settings saved')}>
-                <Save className="h-4 w-4 mr-2" />
-                Save Settings
-              </Button>
-            </CardFooter>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="calls" className="flex-1 space-y-4 overflow-auto">
+          
           <Card>
             <CardHeader>
-              <CardTitle>Phone Integration</CardTitle>
-              <CardDescription>Make and receive calls for podcast interviews</CardDescription>
+              <CardTitle>Generate Landing Page</CardTitle>
+              <CardDescription>Create a professional landing page for your book or podcast</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="p-4 border border-dashed rounded-md flex flex-col items-center justify-center">
-                <Phone className="h-12 w-12 text-muted-foreground mb-2" />
-                <h3 className="font-medium text-center">Phone Integration</h3>
-                <p className="text-sm text-muted-foreground text-center mt-1">
-                  Make AI-powered calls for interviews or voicemail-to-podcast conversion
+              <div className="space-y-2">
+                <Label htmlFor="landing-style">Landing Page Style</Label>
+                <Select defaultValue="modern">
+                  <SelectTrigger id="landing-style">
+                    <SelectValue placeholder="Select style" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="modern">Modern</SelectItem>
+                    <SelectItem value="minimal">Minimal</SelectItem>
+                    <SelectItem value="bold">Bold & Dynamic</SelectItem>
+                    <SelectItem value="professional">Professional</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="landing-elements">Page Elements</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <div className="flex items-center space-x-2">
+                    <Switch id="elem-hero" defaultChecked />
+                    <Label htmlFor="elem-hero">Hero Section</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="elem-about" defaultChecked />
+                    <Label htmlFor="elem-about">About Section</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="elem-chapters" defaultChecked />
+                    <Label htmlFor="elem-chapters">Chapter Preview</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="elem-author" defaultChecked />
+                    <Label htmlFor="elem-author">Author Bio</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="elem-testimonials" />
+                    <Label htmlFor="elem-testimonials">Testimonials</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="elem-buy" defaultChecked />
+                    <Label htmlFor="elem-buy">Buy Button</Label>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="landing-domain">Domain Connection</Label>
+                <Input id="landing-domain" placeholder="Enter domain (e.g., agentelohim.com)" defaultValue="agentelohim.com" />
+                <p className="text-xs text-muted-foreground">
+                  Your landing page will be hosted at the specified domain
                 </p>
-                <Button className="mt-4" onClick={() => toast.info('This feature requires additional setup')}>
-                  Set Up Phone Integration
-                </Button>
               </div>
               
-              <div className="space-y-4 mt-4">
-                <h3 className="font-medium">Call Settings</h3>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="phone-number">Call Phone Number</Label>
-                  <Input id="phone-number" placeholder="Enter phone number to call" />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="call-script">AI Call Script</Label>
-                  <Textarea id="call-script" placeholder="What should the AI say when the call connects?" />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Record Call</Label>
-                    <p className="text-xs text-muted-foreground">Save call audio for podcast</p>
-                  </div>
-                  <Switch checked={true} />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Transcribe Call</Label>
-                    <p className="text-xs text-muted-foreground">Convert to text automatically</p>
-                  </div>
-                  <Switch checked={true} />
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button className="w-full" variant="outline" onClick={() => toast.info('Calling feature coming soon')}>
-                <Phone className="h-4 w-4 mr-2" />
-                Start AI Phone Call
+              <Button onClick={simulateGeneration} className="w-full">
+                <BookmarkPlus className="h-4 w-4 mr-2" />
+                Generate Landing Page
               </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="publishing" className="flex-1 space-y-4 overflow-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>Publishing & Distribution</CardTitle>
-              <CardDescription>Publish your podcast to multiple platforms with one click</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="podcast-title">Podcast Title</Label>
-                <Input id="podcast-title" placeholder="Enter your podcast title" />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="podcast-description">Podcast Description</Label>
-                <Textarea 
-                  id="podcast-description" 
-                  placeholder="Enter your podcast description or use AI to generate one"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Publishing Platforms</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'spotify', name: 'Spotify' },
-                    { id: 'apple', name: 'Apple Podcasts' },
-                    { id: 'youtube', name: 'YouTube' },
-                    { id: 'private', name: 'Private Hosting' }
-                  ].map(platform => (
-                    <div key={platform.id} className="flex items-center space-x-2">
-                      <Switch id={platform.id} />
-                      <Label htmlFor={platform.id}>{platform.name}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Auto-Generate</Label>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: 'desc', name: 'Description' },
-                    { id: 'tags', name: 'SEO Tags' },
-                    { id: 'timestamps', name: 'Timestamps' },
-                    { id: 'blog', name: 'Blog Post' }
-                  ].map(option => (
-                    <div key={option.id} className="flex items-center space-x-2">
-                      <Switch id={option.id} checked={option.id === 'desc' || option.id === 'tags'} />
-                      <Label htmlFor={option.id}>{option.name}</Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </CardContent>
-            <CardFooter>
-              <Button className="w-full" onClick={handlePublish}>
-                <Upload className="h-4 w-4 mr-2" />
-                Publish Podcast
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>

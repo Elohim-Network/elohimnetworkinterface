@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -151,6 +152,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
     }
     
     toast.success('Settings updated');
+    setIsOpen(false); // Close dialog after saving
   };
 
   const handlePresetApply = (preset: any) => {
@@ -298,6 +300,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
           size="icon" 
           className="relative rounded-full h-8 w-8"
           title="Configure AI model connections"
+          onClick={() => setIsOpen(true)}
         >
           <Settings className="h-4 w-4" />
         </Button>
