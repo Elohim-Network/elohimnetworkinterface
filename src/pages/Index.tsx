@@ -5,6 +5,8 @@ import BusinessTools from '@/components/BusinessTools';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'chat' | 'tools'>('chat');
@@ -64,7 +66,12 @@ const Index = () => {
   return (
     <div className="h-screen w-screen overflow-hidden">
       <div className="h-full flex flex-col">
-        <div className="flex items-center justify-center border-b py-1 px-4">
+        <div className="flex items-center justify-between border-b py-1 px-4">
+          <Link to="/" className="flex items-center gap-2 text-muted-foreground hover:text-primary">
+            <ArrowLeft className="h-4 w-4" />
+            <span>Back to Home</span>
+          </Link>
+          
           <Tabs 
             value={activeView} 
             onValueChange={(value) => setActiveView(value as 'chat' | 'tools')}
@@ -75,6 +82,11 @@ const Index = () => {
               <TabsTrigger value="tools">Business Tools</TabsTrigger>
             </TabsList>
           </Tabs>
+          
+          <div>
+            {/* Placeholder for right side of header */}
+            <span className="text-sm text-muted-foreground">Agent Elohim</span>
+          </div>
         </div>
         
         <div className="flex-1 overflow-hidden">
