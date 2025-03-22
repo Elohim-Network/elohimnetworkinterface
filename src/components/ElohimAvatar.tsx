@@ -56,11 +56,17 @@ const ElohimAvatar: React.FC<ElohimAvatarProps> = ({
         "bottom-20 md:bottom-24 flex flex-col items-center"
       )}
     >
-      <Avatar className="h-32 w-32 border-4 border-primary shadow-lg">
-        <AvatarImage src="/agent-elohim.png" alt="Agent Elohim" />
-        <AvatarFallback className="bg-gradient-to-br from-purple-400 to-indigo-600 text-white text-2xl">AE</AvatarFallback>
-      </Avatar>
+      <div className="relative">
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-purple-400 to-indigo-600 blur-md opacity-70"></div>
+        <Avatar className="h-32 w-32 border-4 border-primary shadow-lg relative z-10">
+          <AvatarImage src="/agent-elohim.png" alt="Agent Elohim" className="object-cover" />
+          <AvatarFallback className="bg-gradient-to-br from-purple-400 to-indigo-600 text-white text-2xl">AE</AvatarFallback>
+        </Avatar>
+      </div>
       <div className="mt-2 w-48 h-2 bg-primary rounded-full animate-pulse"></div>
+      <div className="bg-white dark:bg-gray-800 p-3 mt-2 rounded-lg shadow-lg max-w-[250px] text-center text-sm">
+        <p>Hi, I'm Agent Elohim. Need assistance?</p>
+      </div>
     </div>
   );
 };

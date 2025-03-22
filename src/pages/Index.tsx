@@ -7,9 +7,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import ExitIntentPopup from '@/components/ExitIntentPopup';
+import { useExitIntent } from '@/hooks/useExitIntent';
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'chat' | 'tools'>('chat');
+  const { showExitIntent, closeExitIntent } = useExitIntent({
+    threshold: 50,
+    triggerOnIdle: true,
+    idleTime: 30000, // 30 seconds
+  });
+
+  const handleAcceptOffer = () => {
+    closeExitIntent();
+    toast.success("Your free agent has been activated! Welcome to the Elohim Network.");
+    // Here you would trigger any sign-up or onboarding flow
+  };
 
   // Load correct configuration on component mount
   useEffect(() => {
@@ -97,6 +110,10 @@ const Index = () => {
           )}
         </div>
       </div>
+      
+      {showExitIntent && (
+        <ExitIntentPopup onClose={closeExitIntent} onAccept={handleAcceptOffer} />
+      )}
     </div>
   );
 };
