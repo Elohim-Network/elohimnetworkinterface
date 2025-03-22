@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { useVoice } from '@/hooks/useVoice';
@@ -8,8 +7,9 @@ import Sidebar from '@/components/Sidebar';
 import ChatInput from '@/components/ChatInput';
 import MessageBubble from '@/components/MessageBubble';
 import VoiceControl from '@/components/VoiceControl';
+import ElohimIntroduction from '@/components/ElohimIntroduction';
+import ElohimAvatar from '@/components/ElohimAvatar';
 import { toast } from 'sonner';
-import { Message } from '@/types/chat';
 
 const ChatInterface: React.FC = () => {
   const { 
@@ -43,23 +43,39 @@ const ChatInterface: React.FC = () => {
     cloneVoice,
     deleteCustomVoice,
     loadVoices,
-    // Browser voice props
     useBrowserVoice,
     toggleBrowserVoice
   } = useVoice();
   
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showVoiceControls, setShowVoiceControls] = useState(false);
+  const [showIntroduction, setShowIntroduction] = useState(false);
+  const [showAvatar, setShowAvatar] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  const handleUpdateConnectionConfig = useCallback((config: {
-    mistralUrl: string;
-    stableDiffusionUrl: string;
-    mistralModel: string;
-    sdModel: string;
-  }) => {
-    toast.success('Connection settings updated. Your next message will use the new endpoints.');
+  useEffect(() => {
+    const hasSeenIntro = localStorage.getItem('elohim-intro-seen');
+    if (!hasSeenIntro) {
+      setTimeout(() => setShowIntroduction(true), 1500);
+    }
   }, []);
+  
+  const handleIntroductionComplete = () => {
+    setShowIntroduction(false);
+    localStorage.setItem('elohim-intro-seen', 'true');
+    toggleListening();
+    toast.success("Agent Elohim is now listening! Ask me anything.");
+  };
+  
+  const handleIntroductionSkip = () => {
+    setShowIntroduction(false);
+    localStorage.setItem('elohim-intro-seen', 'true');
+    toast.info("You can activate voice controls anytime using the mic button.");
+  };
+  
+  const toggleAvatar = () => {
+    setShowAvatar(prev => !prev);
+  };
   
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -155,7 +171,6 @@ const ChatInterface: React.FC = () => {
           sessions={sessions}
           onExportChats={sessions.length > 0 ? () => toast.info('Exporting conversations...') : undefined}
           onImportChats={(sessions, merge) => toast.success(`Conversations ${merge ? 'merged' : 'imported'} successfully`)}
-          // Voice related props
           availableVoices={availableVoices}
           currentVoiceId={currentVoiceId}
           elevenLabsApiKey={elevenLabsApiKey}
@@ -164,7 +179,6 @@ const ChatInterface: React.FC = () => {
           onCloneVoice={cloneVoice}
           onDeleteVoice={deleteCustomVoice}
           onRefreshVoices={loadVoices}
-          // Browser voice props
           useBrowserVoice={useBrowserVoice}
           onToggleBrowserVoice={toggleBrowserVoice}
         />
@@ -198,6 +212,7 @@ const ChatInterface: React.FC = () => {
                 toggleVoiceEnabled={toggleVoiceEnabled}
                 toggleHandsFreeMode={toggleHandsFreeMode}
                 stopSpeaking={stopSpeaking}
+                showAvatar={toggleAvatar}
               />
             </div>
           )}
@@ -210,6 +225,8 @@ const ChatInterface: React.FC = () => {
               </div>
             </div>
           )}
+          
+          <ElohimAvatar isVisible={showAvatar} />
         </div>
         
         <div className="flex-shrink-0">
@@ -229,6 +246,13 @@ const ChatInterface: React.FC = () => {
           />
         </div>
       </div>
+      
+      {showIntroduction && (
+        <ElohimIntroduction 
+          onComplete={handleIntroductionComplete}
+          onSkip={handleIntroductionSkip}
+        />
+      )}
     </div>
   );
 };

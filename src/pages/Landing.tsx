@@ -1,13 +1,32 @@
-
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowRight, Bot, CheckCheck, Rocket, Shield, Sparkles, Star, Zap } from 'lucide-react';
+import ElohimIntroduction from '@/components/ElohimIntroduction';
 
 const Landing = () => {
   const navigate = useNavigate();
+  const [showIntroduction, setShowIntroduction] = useState(false);
+  
+  useEffect(() => {
+    // Show introduction on first visit to landing page
+    const hasSeenLandingIntro = localStorage.getItem('elohim-landing-intro-seen');
+    if (!hasSeenLandingIntro) {
+      setTimeout(() => setShowIntroduction(true), 1500);
+    }
+  }, []);
+  
+  const handleIntroductionComplete = () => {
+    setShowIntroduction(false);
+    localStorage.setItem('elohim-landing-intro-seen', 'true');
+  };
+  
+  const handleIntroductionSkip = () => {
+    setShowIntroduction(false);
+    localStorage.setItem('elohim-landing-intro-seen', 'true');
+  };
 
   const handleGetStarted = () => {
     navigate('/app');
@@ -353,9 +372,15 @@ const Landing = () => {
           </div>
         </div>
       </footer>
+
+      {showIntroduction && (
+        <ElohimIntroduction 
+          onComplete={handleIntroductionComplete}
+          onSkip={handleIntroductionSkip}
+        />
+      )}
     </div>
   );
 };
 
 export default Landing;
-
