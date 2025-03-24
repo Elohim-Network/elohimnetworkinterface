@@ -5,7 +5,7 @@ import BusinessTools from '@/components/BusinessTools';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ShoppingCart } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { useExitIntent } from '@/hooks/useExitIntent';
@@ -96,8 +96,13 @@ const Index = () => {
             </TabsList>
           </Tabs>
           
-          <div>
-            {/* Placeholder for right side of header */}
+          <div className="flex items-center gap-2">
+            <Link to="/marketplace">
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <ShoppingCart className="h-4 w-4" />
+                <span>Marketplace</span>
+              </Button>
+            </Link>
             <span className="text-sm text-muted-foreground">Agent Elohim</span>
           </div>
         </div>
