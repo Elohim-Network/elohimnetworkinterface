@@ -75,7 +75,7 @@ const ModuleCard: React.FC<ModuleProps> = ({
             <Button variant="secondary" disabled>Installed</Button>
           ) : (
             <Button onClick={() => onInstall(id)}>
-              {price > 0 ? 'Purchase' : 'Install'}
+              {price === 0 ? 'Install Free' : 'Purchase'}
             </Button>
           )}
         </div>

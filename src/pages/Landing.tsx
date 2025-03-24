@@ -1,9 +1,10 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, Bot, CheckCheck, Rocket, Shield, Sparkles, Star, Zap } from 'lucide-react';
+import { ArrowRight, Bot, CheckCheck, Gift, Rocket, Shield, Sparkles, Star, Zap } from 'lucide-react';
 import ElohimIntroduction from '@/components/ElohimIntroduction';
 
 const Landing = () => {
@@ -32,6 +33,10 @@ const Landing = () => {
     navigate('/app');
   };
 
+  const handleViewModules = () => {
+    navigate('/marketplace');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-slate-900">
       {/* Header */}
@@ -49,37 +54,89 @@ const Landing = () => {
       {/* Hero Section */}
       <section className="container mx-auto px-4 py-20 flex flex-col items-center text-center">
         <div className="animate-fade-in max-w-4xl">
+          <div className="mb-6 inline-block px-6 py-2 bg-primary/10 rounded-full text-primary font-semibold">
+            <Gift className="inline mr-2 h-5 w-5" /> Free Base Agent + Premium Modules
+          </div>
           <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-primary to-blue-500 bg-clip-text text-transparent">
             Meet Agent Elohim
           </h1>
           <p className="text-2xl md:text-3xl mb-8 text-muted-foreground">
-            The AI delivering <span className="font-bold text-primary">god-like results</span> for your digital business
+            Start <span className="font-bold text-primary">100% free</span>, then scale with premium modules
           </p>
           <p className="text-xl mb-12 max-w-2xl mx-auto">
-            First-to-market platform designed to dominate the digital entrepreneurship space. 
-            Get your Digital Vending Machine Business in a Box today.
+            Your AI business companion that grows with you. Get the base agent free, then upgrade with plug-and-play modules that deliver revenue-generating superpowers.
           </p>
-          <Button 
-            onClick={handleGetStarted} 
-            size="lg" 
-            className="group text-lg px-8 py-6 rounded-full animate-hover shadow-lg"
-          >
-            Get Started <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              onClick={handleGetStarted} 
+              size="lg" 
+              className="group text-lg px-8 py-6 rounded-full animate-hover shadow-lg"
+            >
+              Get Your Free Agent <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+            </Button>
+            <Button 
+              onClick={handleViewModules} 
+              size="lg" 
+              variant="outline"
+              className="group text-lg px-8 py-6 rounded-full"
+            >
+              Explore Premium Modules
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Value Proposition Section - NEW */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="max-w-5xl mx-auto bg-card rounded-lg p-8 border border-border">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
+                <Gift className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Start Free</h3>
+              <p className="text-muted-foreground">
+                Get your powerful base agent at zero cost. No credit card required.
+              </p>
+            </div>
+            
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
+                <Rocket className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Upgrade Anytime</h3>
+              <p className="text-muted-foreground">
+                Add powerful modules as you need them. Pay only for what you use.
+              </p>
+            </div>
+            
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4">
+                <Zap className="h-8 w-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Generate Revenue</h3>
+              <p className="text-muted-foreground">
+                Turn your free agent into a revenue-generating digital business.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Features Section */}
       <section className="container mx-auto px-4 py-20">
-        <h2 className="text-4xl font-bold text-center mb-16">Transform Your Business</h2>
+        <h2 className="text-4xl font-bold text-center mb-4">Free Base Agent + Premium Superpowers</h2>
+        <p className="text-center text-muted-foreground mb-16 max-w-2xl mx-auto">
+          Start with a powerful free base agent, then supercharge with plug-and-play premium modules
+        </p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <Card className="glass-card hover-scale">
             <CardContent className="p-8 flex flex-col items-center text-center">
               <Bot className="h-16 w-16 text-primary mb-4" />
-              <h3 className="text-2xl font-bold mb-2">AI-Powered</h3>
+              <h3 className="text-2xl font-bold mb-2">Free AI Core</h3>
               <p className="text-muted-foreground">
-                Harness the power of Mistral 7B model to automate your business processes and chat with clients.
+                Your base agent comes with the Mistral 7B model, ready to automate tasks and chat with clients.
               </p>
             </CardContent>
           </Card>
@@ -89,7 +146,7 @@ const Landing = () => {
               <Rocket className="h-16 w-16 text-primary mb-4" />
               <h3 className="text-2xl font-bold mb-2">Premium Modules</h3>
               <p className="text-muted-foreground">
-                Scale your business with modular features, each designed to drive revenue and enhance user experience.
+                Scale your business with revenue-generating modules that integrate seamlessly with your base agent.
               </p>
             </CardContent>
           </Card>
@@ -97,21 +154,62 @@ const Landing = () => {
           <Card className="glass-card hover-scale">
             <CardContent className="p-8 flex flex-col items-center text-center">
               <Shield className="h-16 w-16 text-primary mb-4" />
-              <h3 className="text-2xl font-bold mb-2">Open Source Core</h3>
+              <h3 className="text-2xl font-bold mb-2">Expandable System</h3>
               <p className="text-muted-foreground">
-                Built on reliable, cutting-edge open source tools with optional premium integrations like 11 Labs.
+                Your agent grows with your business. Add new capabilities as you need them, without rebuilding.
               </p>
             </CardContent>
           </Card>
         </div>
       </section>
 
+      {/* Module Showcase - NEW */}
+      <section className="container mx-auto px-4 py-20 bg-muted/30">
+        <div className="text-center mb-16">
+          <h2 className="text-4xl font-bold mb-4">Premium Modules Marketplace</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Expand your agent's capabilities with these powerful plug-and-play modules
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+          {/* Module Preview Cards - Just display 3 popular ones */}
+          <ModulePreviewCard 
+            title="Business Intelligence"
+            description="Advanced analytics and reporting for your business metrics"
+            price={29.99}
+            icon={<BarChart className="h-10 w-10 text-primary" />}
+          />
+          
+          <ModulePreviewCard 
+            title="AI Podcasting"
+            description="Create professional podcasts with AI voices and content generation"
+            price={39.99}
+            icon={<Mic className="h-10 w-10 text-primary" />}
+            isNew={true}
+          />
+          
+          <ModulePreviewCard 
+            title="Lead Generator"
+            description="Automatically generate and qualify leads for your business"
+            price={24.99}
+            icon={<Users className="h-10 w-10 text-primary" />}
+            isPopular={true}
+          />
+        </div>
+        
+        <div className="text-center mt-12">
+          <Button onClick={handleViewModules} size="lg" className="px-8">
+            View All Modules <ArrowRight className="ml-2" />
+          </Button>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section className="container mx-auto px-4 py-20 pb-32">
-        <h2 className="text-4xl font-bold text-center mb-4">Pricing Plans</h2>
+        <h2 className="text-4xl font-bold text-center mb-4">Start Free, Scale with Modules</h2>
         <p className="text-center text-muted-foreground mb-16 max-w-2xl mx-auto">
-          From startup to enterprise, we have plans to scale with your business.
-          Move from a $100,000-level website to $1 million company status.
+          Get your base agent at no cost, then add premium modules to grow your digital business.
         </p>
         
         <Tabs defaultValue="monthly" className="w-full max-w-4xl mx-auto">
@@ -124,8 +222,40 @@ const Landing = () => {
             <Card className="glass-card hover-scale">
               <CardContent className="p-8">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-2xl font-bold">Startup</h3>
-                  <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm">Popular</span>
+                  <h3 className="text-2xl font-bold">Base Agent</h3>
+                  <span className="bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-sm font-medium">Free Forever</span>
+                </div>
+                <div className="mb-4">
+                  <span className="text-4xl font-bold">$0</span>
+                </div>
+                <ul className="space-y-3 mb-8">
+                  <li className="flex items-center">
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Core AI agent features</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Basic chat capabilities</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Simple automation tasks</span>
+                  </li>
+                </ul>
+                <Button className="w-full" onClick={handleGetStarted}>
+                  Get Started Free
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <Card className="glass-card hover-scale relative overflow-hidden">
+              <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground px-3 py-1 rotate-12 z-10">
+                Most Popular
+              </div>
+              <CardContent className="p-8">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-2xl font-bold">Premium Bundle</h3>
+                  <Star className="text-yellow-400 h-6 w-6" />
                 </div>
                 <div className="mb-4">
                   <span className="text-4xl font-bold">$97</span>
@@ -134,54 +264,23 @@ const Landing = () => {
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center">
                     <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>All core features</span>
+                    <span>Everything in Base Agent</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>AI Chat Assistant</span>
+                    <span>5 Premium Modules Included</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>Basic integrations</span>
+                    <span>Advanced AI capabilities</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Priority support</span>
                   </li>
                 </ul>
-                <Button className="w-full">Get Started</Button>
-              </CardContent>
-            </Card>
-            
-            <Card className="glass-card hover-scale relative overflow-hidden">
-              <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground px-3 py-1 rotate-12 z-10">
-                Best Value
-              </div>
-              <CardContent className="p-8">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-2xl font-bold">Enterprise</h3>
-                  <Star className="text-yellow-400 h-6 w-6" />
-                </div>
-                <div className="mb-4">
-                  <span className="text-4xl font-bold">$297</span>
-                  <span className="text-muted-foreground">/month</span>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  <li className="flex items-center">
-                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>All Startup features</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>11 Labs voice integration</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>Advanced business modules</span>
-                  </li>
-                  <li className="flex items-center">
-                    <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>White-label options</span>
-                  </li>
-                </ul>
-                <Button className="w-full" variant="secondary">
-                  <Zap className="mr-2 h-4 w-4" /> Upgrade Now
+                <Button className="w-full" variant="secondary" onClick={handleViewModules}>
+                  <Zap className="mr-2 h-4 w-4" /> Upgrade Your Agent
                 </Button>
               </CardContent>
             </Card>
@@ -191,28 +290,29 @@ const Landing = () => {
             <Card className="glass-card hover-scale">
               <CardContent className="p-8">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-2xl font-bold">Startup</h3>
-                  <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm">Popular</span>
+                  <h3 className="text-2xl font-bold">Base Agent</h3>
+                  <span className="bg-green-500/20 text-green-500 px-3 py-1 rounded-full text-sm font-medium">Free Forever</span>
                 </div>
                 <div className="mb-4">
-                  <span className="text-4xl font-bold">$77</span>
-                  <span className="text-muted-foreground">/month</span>
+                  <span className="text-4xl font-bold">$0</span>
                 </div>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center">
                     <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>All core features</span>
+                    <span>Core AI agent features</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>AI Chat Assistant</span>
+                    <span>Basic chat capabilities</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>Basic integrations</span>
+                    <span>Simple automation tasks</span>
                   </li>
                 </ul>
-                <Button className="w-full">Get Started</Button>
+                <Button className="w-full" onClick={handleGetStarted}>
+                  Get Started Free
+                </Button>
               </CardContent>
             </Card>
             
@@ -222,33 +322,33 @@ const Landing = () => {
               </div>
               <CardContent className="p-8">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-2xl font-bold">Enterprise</h3>
+                  <h3 className="text-2xl font-bold">Premium Bundle</h3>
                   <Star className="text-yellow-400 h-6 w-6" />
                 </div>
                 <div className="mb-4">
-                  <span className="text-4xl font-bold">$237</span>
+                  <span className="text-4xl font-bold">$77</span>
                   <span className="text-muted-foreground">/month</span>
                 </div>
                 <ul className="space-y-3 mb-8">
                   <li className="flex items-center">
                     <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>All Startup features</span>
+                    <span>Everything in Base Agent</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>11 Labs voice integration</span>
+                    <span>5 Premium Modules Included</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>Advanced business modules</span>
+                    <span>Advanced AI capabilities</span>
                   </li>
                   <li className="flex items-center">
                     <CheckCheck className="h-5 w-5 text-green-500 mr-2" />
-                    <span>White-label options</span>
+                    <span>Priority support + 2 months free</span>
                   </li>
                 </ul>
-                <Button className="w-full" variant="secondary">
-                  <Zap className="mr-2 h-4 w-4" /> Upgrade Now
+                <Button className="w-full" variant="secondary" onClick={handleViewModules}>
+                  <Zap className="mr-2 h-4 w-4" /> Upgrade Your Agent
                 </Button>
               </CardContent>
             </Card>
@@ -269,7 +369,7 @@ const Landing = () => {
                     <Star key={star} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-                <p className="italic">"The Digital Vending Machine revolutionized my online business. Revenue up 340% in just 2 months!"</p>
+                <p className="italic">"I started with the free agent and added just one premium module. Now my digital business is generating $3,400/month on autopilot!"</p>
                 <div className="flex items-center gap-3 mt-4">
                   <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
                     <span className="font-bold text-primary">JD</span>
@@ -291,7 +391,7 @@ const Landing = () => {
                     <Star key={star} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-                <p className="italic">"Agent Elohim feels like having a business partner who never sleeps. Best investment of the year."</p>
+                <p className="italic">"Started with the free agent last month. Added two premium modules and already seeing ROI. Best business decision I've made this year."</p>
                 <div className="flex items-center gap-3 mt-4">
                   <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
                     <span className="font-bold text-primary">SJ</span>
@@ -313,7 +413,7 @@ const Landing = () => {
                     <Star key={star} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                   ))}
                 </div>
-                <p className="italic">"From struggling solopreneur to managing a team of 5 in just 6 months. The modules pay for themselves."</p>
+                <p className="italic">"The free agent alone was impressive, but adding the premium modules took my business to a whole new level. Now I have a team of 5!"</p>
                 <div className="flex items-center gap-3 mt-4">
                   <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center">
                     <span className="font-bold text-primary">MT</span>
@@ -332,18 +432,22 @@ const Landing = () => {
       {/* CTA Section */}
       <section className="container mx-auto px-4 py-20 text-center">
         <div className="max-w-3xl mx-auto">
-          <h2 className="text-4xl font-bold mb-6">Ready to Transform Your Business?</h2>
+          <span className="inline-block mb-4 px-4 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">Limited Time Offer</span>
+          <h2 className="text-4xl font-bold mb-6">Get Your Free AI Agent Today</h2>
           <p className="text-xl mb-8 text-muted-foreground">
-            Join thousands of entrepreneurs who are leveraging Agent Elohim to create digital vending machines that work 24/7.
+            Join thousands of entrepreneurs who started with a free agent and built profitable digital businesses with premium modules.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button size="lg" className="text-lg px-8" onClick={handleGetStarted}>
-              Get Started Today
+              Claim Your Free Agent
             </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8">
-              Watch Demo
+            <Button size="lg" variant="outline" className="text-lg px-8" onClick={handleViewModules}>
+              Explore Premium Modules
             </Button>
           </div>
+          <p className="mt-6 text-sm text-muted-foreground">
+            No credit card required. Start free, upgrade when you're ready.
+          </p>
         </div>
       </section>
 
@@ -380,6 +484,46 @@ const Landing = () => {
         />
       )}
     </div>
+  );
+};
+
+// Module Preview Card Component for the new section
+const ModulePreviewCard = ({ 
+  title, 
+  description, 
+  price, 
+  icon, 
+  isNew = false, 
+  isPopular = false
+}) => {
+  return (
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start mb-4">
+          <div className="p-3 bg-primary/10 rounded-lg">
+            {icon}
+          </div>
+          <div className="flex flex-col items-end">
+            {isNew && (
+              <Badge className="bg-green-500 mb-2">New</Badge>
+            )}
+            {isPopular && (
+              <Badge className="bg-amber-500 mb-2">Popular</Badge>
+            )}
+            <Badge variant="outline" className="text-lg font-semibold">${price}</Badge>
+          </div>
+        </div>
+        
+        <h3 className="text-xl font-bold mb-2">{title}</h3>
+        <p className="text-muted-foreground mb-4 line-clamp-2">
+          {description}
+        </p>
+        
+        <Button className="w-full" variant="outline">
+          View Details
+        </Button>
+      </CardContent>
+    </Card>
   );
 };
 
