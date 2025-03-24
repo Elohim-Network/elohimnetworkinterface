@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowRight, Bot, CheckCheck, Gift, Rocket, Shield, Sparkles, Star, Zap } from 'lucide-react';
+import { ArrowRight, Bot, BarChart, CheckCheck, Gift, Mic, Rocket, Shield, Sparkles, Star, Users, Zap } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import ElohimIntroduction from '@/components/ElohimIntroduction';
 
 const Landing = () => {
