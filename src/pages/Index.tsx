@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import ChatInterface from '@/components/ChatInterface';
 import BusinessTools from '@/components/BusinessTools';
@@ -9,6 +10,7 @@ import { Link } from 'react-router-dom';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { useExitIntent } from '@/hooks/useExitIntent';
 import ConnectionStatus from '@/components/ConnectionStatus';
+import { useModules } from '@/hooks/useModules';
 
 // Define the new API endpoint for Cloudflare
 const API_URL = "https://agentelohim.com/v1/chat/completions";
@@ -29,12 +31,34 @@ const Index = () => {
     idleTime: 30000, // 30 seconds
     cookieDuration: 7 // Remember for 7 days
   });
+  
+  // Get module access information
+  const { isFeatureUnlocked, isAdminUser, purchaseModule } = useModules();
 
   const handleAcceptOffer = () => {
     closeExitIntent();
     toast.success("Your free agent has been activated! Welcome to the Elohim Network.");
     // Set a flag to indicate the user accepted the offer
     localStorage.setItem('agent-activated', 'true');
+  };
+  
+  const handleBusinessToolsClick = () => {
+    // Check if business tools are unlocked
+    if (!isFeatureUnlocked('business-tools') && !isAdminUser()) {
+      toast.info("Business Tools require the Business Tools Suite module");
+      
+      // Show purchase confirmation
+      if (confirm("Would you like to purchase the Business Tools Suite?")) {
+        purchaseModule('business-tools').then(success => {
+          if (success) {
+            setActiveView('tools');
+          }
+        });
+      }
+      return;
+    }
+    
+    setActiveView('tools');
   };
 
   // Check backend connectivity
@@ -161,7 +185,13 @@ const Index = () => {
           
           <Tabs 
             value={activeView} 
-            onValueChange={(value) => setActiveView(value as 'chat' | 'tools')}
+            onValueChange={(value) => {
+              if (value === 'tools') {
+                handleBusinessToolsClick();
+              } else {
+                setActiveView(value as 'chat' | 'tools');
+              }
+            }}
             className="w-auto"
           >
             <TabsList>

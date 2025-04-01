@@ -2,6 +2,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { useVoice } from '@/hooks/useVoice';
+import { useModules } from '@/hooks/useModules';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -10,6 +11,8 @@ import MessageBubble from '@/components/MessageBubble';
 import VoiceControl from '@/components/VoiceControl';
 import ElohimIntroduction from '@/components/ElohimIntroduction';
 import ElohimAvatar from '@/components/ElohimAvatar';
+import ModulePromotion from '@/components/ModulePromotion';
+import AdminModeToggle from '@/components/AdminModeToggle';
 import { toast } from 'sonner';
 
 // Remove handleUpdateConnectionConfig which is causing the error
@@ -49,10 +52,19 @@ const ChatInterface: React.FC = () => {
     toggleBrowserVoice
   } = useVoice();
   
+  const {
+    promotedModule,
+    isFeatureUnlocked,
+    isAdminUser,
+    setAdminStatus,
+    purchaseModule,
+  } = useModules();
+  
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showVoiceControls, setShowVoiceControls] = useState(false);
   const [showIntroduction, setShowIntroduction] = useState(false);
   const [showAvatar, setShowAvatar] = useState(false);
+  const [showPromotion, setShowPromotion] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -60,7 +72,16 @@ const ChatInterface: React.FC = () => {
     if (!hasSeenIntro) {
       setTimeout(() => setShowIntroduction(true), 1500);
     }
-  }, []);
+    
+    // Show promotion after some time for non-admin users
+    if (!isAdminUser()) {
+      const promotionTimer = setTimeout(() => {
+        setShowPromotion(true);
+      }, 30000); // Show after 30 seconds
+      
+      return () => clearTimeout(promotionTimer);
+    }
+  }, [isAdminUser]);
   
   const handleIntroductionComplete = () => {
     setShowIntroduction(false);
@@ -76,7 +97,26 @@ const ChatInterface: React.FC = () => {
   };
   
   const toggleAvatar = () => {
+    // Check if avatar feature is unlocked
+    if (!isFeatureUnlocked('avatar-module') && !isAdminUser()) {
+      toast.info("Avatar feature requires the Avatar Customization module");
+      return;
+    }
+    
     setShowAvatar(prev => !prev);
+  };
+  
+  const handlePromotionPurchase = async (moduleId: string) => {
+    await purchaseModule(moduleId);
+    setShowPromotion(false);
+  };
+  
+  const dismissPromotion = () => {
+    setShowPromotion(false);
+    // Show promotion again later
+    setTimeout(() => {
+      setShowPromotion(true);
+    }, 120000); // Show again after 2 minutes
   };
   
   useEffect(() => {
@@ -101,6 +141,13 @@ const ChatInterface: React.FC = () => {
   
   useEffect(() => {
     if (handsFreeMode && transcript && !transcript.endsWith('...') && transcript.length > 10) {
+      // Check if hands-free mode is unlocked
+      if (!isFeatureUnlocked('voice-module') && !isAdminUser()) {
+        toggleHandsFreeMode(); // Turn it off
+        toast.info("Hands-free mode requires the Advanced Voice Controls module");
+        return;
+      }
+      
       const timer = setTimeout(() => {
         if (transcript) {
           sendMessage(transcript);
@@ -110,7 +157,7 @@ const ChatInterface: React.FC = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [handsFreeMode, transcript, sendMessage, resetTranscript]);
+  }, [handsFreeMode, transcript, sendMessage, resetTranscript, isFeatureUnlocked, isAdminUser, toggleHandsFreeMode]);
   
   useEffect(() => {
     if (isListening || isSpeaking || handsFreeMode) {
@@ -189,7 +236,14 @@ const ChatInterface: React.FC = () => {
           onRefreshVoices={loadVoices}
           useBrowserVoice={useBrowserVoice}
           onToggleBrowserVoice={toggleBrowserVoice}
-        />
+        >
+          <div className="ml-auto mr-2">
+            <AdminModeToggle 
+              isAdmin={isAdminUser()} 
+              onToggle={setAdminStatus}
+            />
+          </div>
+        </Header>
         
         <div className="flex-1 relative">
           <ScrollArea className="h-full pb-20">
@@ -208,6 +262,26 @@ const ChatInterface: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
+          
+          {showPromotion && promotedModule && !isAdminUser() && (
+            <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-20 w-5/6 max-w-md">
+              <div className="relative">
+                <button
+                  onClick={dismissPromotion}
+                  className="absolute top-2 right-2 z-10 rounded-full h-5 w-5 bg-black/20 
+                  hover:bg-black/40 flex items-center justify-center text-white"
+                  aria-label="Close promotion"
+                >
+                  ✕
+                </button>
+                <ModulePromotion
+                  module={promotedModule}
+                  onPurchase={handlePromotionPurchase}
+                  className="shadow-xl"
+                />
+              </div>
+            </div>
+          )}
           
           {(showVoiceControls || handsFreeMode) && (
             <div className="absolute top-4 right-4 z-10">
