@@ -11,6 +11,9 @@ import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { useExitIntent } from '@/hooks/useExitIntent';
 import ConnectionStatus from '@/components/ConnectionStatus';
 
+// Define the new API endpoint
+const API_URL = "https://mistral.yourdomain.com/v1/chat/completions";
+
 const Index = () => {
   const [activeView, setActiveView] = useState<'chat' | 'tools'>('chat');
   const [backendStatus, setBackendStatus] = useState<{
@@ -79,9 +82,9 @@ const Index = () => {
       }
     }
     
-    // Default configuration with the updated URLs
+    // Default configuration with the updated URL
     return {
-      mistralUrl: 'http://localhost:11434/v1/chat/completions',
+      mistralUrl: API_URL, // Use the new constant
       stableDiffusionUrl: 'http://127.0.0.1:8188',
       mistralModel: 'mistral-7b',
       sdModel: 'stable-diffusion-v1-5'
@@ -91,7 +94,7 @@ const Index = () => {
   // Load correct configuration on component mount
   useEffect(() => {
     const savedConfig = localStorage.getItem('local-ai-config');
-    const correctMistralUrl = 'http://localhost:11434/v1/chat/completions';
+    const correctMistralUrl = API_URL; // Use the new constant
     const correctSdUrl = 'http://127.0.0.1:8188';
     
     if (savedConfig) {

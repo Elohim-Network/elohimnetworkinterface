@@ -2,6 +2,9 @@
 // Local AI Service - Communicates with locally running AI models
 // This service handles connections to various local LLMs and Stable Diffusion
 
+// Define the new API endpoint
+const API_URL = "https://mistral.yourdomain.com/v1/chat/completions";
+
 interface MistralCompletionRequest {
   prompt: string;
   max_tokens?: number;
@@ -30,9 +33,9 @@ const getConfig = () => {
     }
   }
   
-  // Default configuration with the updated URLs
+  // Default configuration with the updated URL
   return {
-    mistralUrl: 'http://localhost:11434/v1/chat/completions',
+    mistralUrl: API_URL,
     stableDiffusionUrl: 'http://127.0.0.1:8188',
     mistralModel: 'mistral-7b',
     sdModel: 'stable-diffusion-v1-5'
