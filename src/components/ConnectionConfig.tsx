@@ -52,7 +52,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
   useBrowserVoice = false,
   onToggleBrowserVoice
 }) => {
-  const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
+  const MISTRAL_API_URL = "https://agentelohim.com/v1/chat/completions";
 
   const [mistralUrl, setMistralUrl] = useState(MISTRAL_API_URL);
   const [stableDiffusionUrl, setStableDiffusionUrl] = useState('http://127.0.0.1:8188');
@@ -340,7 +340,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                 id="mistral-url"
                 value={mistralUrl}
                 onChange={(e) => setMistralUrl(e.target.value)}
-                placeholder="https://api.mistral.ai/v1/chat/completions"
+                placeholder="https://agentelohim.com/v1/chat/completions"
               />
               <p className="text-xs text-muted-foreground">
                 The API endpoint for your text AI model (Mistral, Llama, etc.)

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import ChatInterface from '@/components/ChatInterface';
 import BusinessTools from '@/components/BusinessTools';
@@ -11,8 +10,8 @@ import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { useExitIntent } from '@/hooks/useExitIntent';
 import ConnectionStatus from '@/components/ConnectionStatus';
 
-// Define the new API endpoint
-const API_URL = "https://mistral.yourdomain.com/v1/chat/completions";
+// Define the new API endpoint for Cloudflare
+const API_URL = "https://agentelohim.com/v1/chat/completions";
 
 const Index = () => {
   const [activeView, setActiveView] = useState<'chat' | 'tools'>('chat');
@@ -71,7 +70,7 @@ const Index = () => {
     }
   };
 
-  // Helper to get config
+  // Get the stored configuration or use defaults
   const getConfig = () => {
     const savedConfig = localStorage.getItem('local-ai-config');
     if (savedConfig) {
@@ -84,9 +83,9 @@ const Index = () => {
     
     // Default configuration with the updated URL
     return {
-      mistralUrl: API_URL, // Use the new constant
+      mistralUrl: API_URL,
       stableDiffusionUrl: 'http://127.0.0.1:8188',
-      mistralModel: 'mistral-7b',
+      mistralModel: 'mistral-7b-instruct',
       sdModel: 'stable-diffusion-v1-5'
     };
   };
@@ -94,7 +93,7 @@ const Index = () => {
   // Load correct configuration on component mount
   useEffect(() => {
     const savedConfig = localStorage.getItem('local-ai-config');
-    const correctMistralUrl = API_URL; // Use the new constant
+    const correctMistralUrl = API_URL;
     const correctSdUrl = 'http://127.0.0.1:8188';
     
     if (savedConfig) {
@@ -126,7 +125,7 @@ const Index = () => {
         const defaultConfig = {
           mistralUrl: correctMistralUrl,
           stableDiffusionUrl: correctSdUrl,
-          mistralModel: 'mistral-7b',
+          mistralModel: 'mistral-7b-instruct',
           sdModel: 'stable-diffusion-v1-5'
         };
         localStorage.setItem('local-ai-config', JSON.stringify(defaultConfig));
@@ -136,7 +135,7 @@ const Index = () => {
       const defaultConfig = {
         mistralUrl: correctMistralUrl,
         stableDiffusionUrl: correctSdUrl,
-        mistralModel: 'mistral-7b',
+        mistralModel: 'mistral-7b-instruct',
         sdModel: 'stable-diffusion-v1-5'
       };
       localStorage.setItem('local-ai-config', JSON.stringify(defaultConfig));
