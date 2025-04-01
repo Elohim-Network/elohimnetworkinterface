@@ -16,12 +16,14 @@ const Index = () => {
     threshold: 50,
     triggerOnIdle: true,
     idleTime: 30000, // 30 seconds
+    cookieDuration: 7 // Remember for 7 days
   });
 
   const handleAcceptOffer = () => {
     closeExitIntent();
     toast.success("Your free agent has been activated! Welcome to the Elohim Network.");
-    // Here you would trigger any sign-up or onboarding flow
+    // Set a flag to indicate the user accepted the offer
+    localStorage.setItem('agent-activated', 'true');
   };
 
   // Load correct configuration on component mount

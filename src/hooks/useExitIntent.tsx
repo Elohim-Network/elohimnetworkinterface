@@ -8,6 +8,7 @@ interface UseExitIntentOptions {
   idleTime?: number;
   disableOnMobile?: boolean;
   onExitIntent?: () => void;
+  cookieDuration?: number; // Days to remember user's choice
 }
 
 export const useExitIntent = ({
@@ -16,12 +17,22 @@ export const useExitIntent = ({
   triggerOnIdle = false,
   idleTime = 10000,
   disableOnMobile = true,
-  onExitIntent
+  onExitIntent,
+  cookieDuration = 7 // Default: remember for 7 days
 }: UseExitIntentOptions = {}) => {
   const [showExitIntent, setShowExitIntent] = useState(false);
   const [idleTimer, setIdleTimer] = useState<number | null>(null);
   const [lastActivity, setLastActivity] = useState(Date.now());
   const [isMobile, setIsMobile] = useState(false);
+  
+  // Check if popup was already shown and dismissed
+  useEffect(() => {
+    const hasSeenPopup = localStorage.getItem('exit-intent-seen');
+    if (hasSeenPopup) {
+      // If the user has seen the popup, don't show it again during this session
+      setShowExitIntent(false);
+    }
+  }, []);
 
   // Check if the user is on a mobile device
   useEffect(() => {
@@ -41,6 +52,7 @@ export const useExitIntent = ({
   // Handle mouse movement to detect exit intent
   useEffect(() => {
     if (disableOnMobile && isMobile) return;
+    if (localStorage.getItem('exit-intent-seen')) return; // Don't track if already seen
 
     let throttleTimer: number | null = null;
 
@@ -75,6 +87,7 @@ export const useExitIntent = ({
   // Handle idle time trigger
   useEffect(() => {
     if (!triggerOnIdle) return;
+    if (localStorage.getItem('exit-intent-seen')) return; // Don't track if already seen
     
     const handleActivity = () => {
       setLastActivity(Date.now());
@@ -116,6 +129,8 @@ export const useExitIntent = ({
 
   const closeExitIntent = () => {
     setShowExitIntent(false);
+    // Remember that user has seen the popup
+    localStorage.setItem('exit-intent-seen', Date.now().toString());
   };
 
   return {
