@@ -1,8 +1,8 @@
 // Local AI Service - Communicates with locally running AI models or cloud-based APIs like Mistral
 // This service handles connections to various LLMs and Stable Diffusion
 
-// The official Mistral AI API endpoint
-const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
+// The official Mistral AI API endpoint with the correct domain
+const MISTRAL_API_URL = "https://agentelohim.com/v1/chat/completions";
 
 interface MistralCompletionRequest {
   model: string;
