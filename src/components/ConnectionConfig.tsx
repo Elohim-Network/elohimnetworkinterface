@@ -52,8 +52,11 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
   useBrowserVoice = false,
   onToggleBrowserVoice
 }) => {
-  const [mistralUrl, setMistralUrl] = useState('http://localhost:11434/v1/chat/completions');
-  const [stableDiffusionUrl, setStableDiffusionUrl] = useState('http://localhost:7860/sdapi/v1/txt2img');
+  // Define API_URL constant to match the one in Index.tsx and localAiService.ts
+  const API_URL = "https://mistral.yourdomain.com/v1/chat/completions";
+
+  const [mistralUrl, setMistralUrl] = useState(API_URL);
+  const [stableDiffusionUrl, setStableDiffusionUrl] = useState('http://127.0.0.1:8188');
   const [mistralModel, setMistralModel] = useState('mistral-7b');
   const [sdModel, setSdModel] = useState('stable-diffusion-v1-5');
   const [isOpen, setIsOpen] = useState(false);
@@ -91,7 +94,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
           if (preset.name === "Mac M1/M2 Default") {
             return {
               ...preset,
-              mistralUrl: 'http://localhost:11434/v1/chat/completions'
+              mistralUrl: API_URL
             };
           }
           return preset;
@@ -105,8 +108,8 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       const defaultPresets = [
         {
           name: "Mac M1/M2 Default",
-          mistralUrl: 'http://localhost:11434/v1/chat/completions',
-          stableDiffusionUrl: 'http://localhost:7860/sdapi/v1/txt2img',
+          mistralUrl: API_URL,
+          stableDiffusionUrl: 'http://127.0.0.1:8188',
           mistralModel: 'mistral-7b',
           sdModel: 'stable-diffusion-v1-5'
         },
@@ -300,7 +303,6 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
           size="icon" 
           className="relative rounded-full h-8 w-8"
           title="Configure AI model connections"
-          onClick={() => setIsOpen(true)}
         >
           <Settings className="h-4 w-4" />
         </Button>
@@ -329,10 +331,10 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                 id="mistral-url"
                 value={mistralUrl}
                 onChange={(e) => setMistralUrl(e.target.value)}
-                placeholder="http://localhost:11434/v1/chat/completions"
+                placeholder="https://mistral.yourdomain.com/v1/chat/completions"
               />
               <p className="text-xs text-muted-foreground">
-                The API endpoint for your local text AI model (Mistral, Llama, etc.)
+                The API endpoint for your text AI model (Mistral, Llama, etc.)
               </p>
             </div>
             
@@ -357,7 +359,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                 id="sd-url"
                 value={stableDiffusionUrl}
                 onChange={(e) => setStableDiffusionUrl(e.target.value)}
-                placeholder="http://localhost:7860/sdapi/v1/txt2img"
+                placeholder="http://127.0.0.1:8188"
               />
               <p className="text-xs text-muted-foreground">
                 The API endpoint for your image generation model (Stable Diffusion, etc.)
