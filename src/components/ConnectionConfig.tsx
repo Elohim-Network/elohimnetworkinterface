@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,7 @@ interface ConnectionConfigProps {
     stableDiffusionUrl: string;
     mistralModel: string;
     sdModel: string;
+    mistralApiKey?: string;
   }) => void;
   onExportChats?: () => void;
   onImportChats?: (sessions: any[], merge?: boolean) => void;
@@ -52,13 +52,13 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
   useBrowserVoice = false,
   onToggleBrowserVoice
 }) => {
-  // Define API_URL constant to match the one in Index.tsx and localAiService.ts
-  const API_URL = "https://mistral.yourdomain.com/v1/chat/completions";
+  const MISTRAL_API_URL = "https://api.mistral.ai/v1/chat/completions";
 
-  const [mistralUrl, setMistralUrl] = useState(API_URL);
+  const [mistralUrl, setMistralUrl] = useState(MISTRAL_API_URL);
   const [stableDiffusionUrl, setStableDiffusionUrl] = useState('http://127.0.0.1:8188');
-  const [mistralModel, setMistralModel] = useState('mistral-7b');
+  const [mistralModel, setMistralModel] = useState('mistral-7b-instruct');
   const [sdModel, setSdModel] = useState('stable-diffusion-v1-5');
+  const [mistralApiKey, setMistralApiKey] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("text");
   const [presetName, setPresetName] = useState("");
@@ -81,6 +81,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
         setStableDiffusionUrl(config.stableDiffusionUrl || stableDiffusionUrl);
         setMistralModel(config.mistralModel || mistralModel);
         setSdModel(config.sdModel || sdModel);
+        setMistralApiKey(config.mistralApiKey || '');
       } catch (e) {
         console.error('Error parsing saved config:', e);
       }
@@ -94,7 +95,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
           if (preset.name === "Mac M1/M2 Default") {
             return {
               ...preset,
-              mistralUrl: API_URL
+              mistralUrl: MISTRAL_API_URL
             };
           }
           return preset;
@@ -108,9 +109,9 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       const defaultPresets = [
         {
           name: "Mac M1/M2 Default",
-          mistralUrl: API_URL,
+          mistralUrl: MISTRAL_API_URL,
           stableDiffusionUrl: 'http://127.0.0.1:8188',
-          mistralModel: 'mistral-7b',
+          mistralModel: 'mistral-7b-instruct',
           sdModel: 'stable-diffusion-v1-5'
         },
         {
@@ -119,6 +120,13 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
           stableDiffusionUrl: 'http://localhost:7860/sdapi/v1/txt2img',
           mistralModel: 'llama3',
           sdModel: 'sdxl'
+        },
+        {
+          name: "Mistral Cloud API",
+          mistralUrl: MISTRAL_API_URL,
+          stableDiffusionUrl: 'http://127.0.0.1:8188',
+          mistralModel: 'mistral-small',
+          sdModel: 'stable-diffusion-v1-5'
         }
       ];
       setPresets(defaultPresets);
@@ -140,7 +148,8 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       mistralUrl,
       stableDiffusionUrl,
       mistralModel,
-      sdModel
+      sdModel,
+      mistralApiKey
     };
     
     localStorage.setItem('local-ai-config', JSON.stringify(config));
@@ -155,7 +164,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
     }
     
     toast.success('Settings updated');
-    setIsOpen(false); // Close dialog after saving
+    setIsOpen(false);
   };
 
   const handlePresetApply = (preset: any) => {
@@ -331,10 +340,24 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                 id="mistral-url"
                 value={mistralUrl}
                 onChange={(e) => setMistralUrl(e.target.value)}
-                placeholder="https://mistral.yourdomain.com/v1/chat/completions"
+                placeholder="https://api.mistral.ai/v1/chat/completions"
               />
               <p className="text-xs text-muted-foreground">
                 The API endpoint for your text AI model (Mistral, Llama, etc.)
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="mistral-api-key">Mistral API Key</Label>
+              <Input
+                id="mistral-api-key"
+                type="password"
+                value={mistralApiKey}
+                onChange={(e) => setMistralApiKey(e.target.value)}
+                placeholder="Enter your Mistral API key"
+              />
+              <p className="text-xs text-muted-foreground">
+                Required for Mistral Cloud API. Get your key from <a href="https://console.mistral.ai/api-keys/" target="_blank" className="underline">console.mistral.ai</a>
               </p>
             </div>
             
@@ -344,10 +367,10 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                 id="mistral-model"
                 value={mistralModel}
                 onChange={(e) => setMistralModel(e.target.value)}
-                placeholder="mistral-7b"
+                placeholder="mistral-small"
               />
               <p className="text-xs text-muted-foreground">
-                The model identifier for your text AI (e.g., mistral-7b, llama3, vicuna)
+                The model identifier (e.g., mistral-small, mistral-medium, mistral-large)
               </p>
             </div>
           </TabsContent>
