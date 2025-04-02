@@ -17,3 +17,6 @@ export interface AdminStats {
     users: number;
   }[];
 }
+
+// Define the module category type to match the Module interface
+export type ModuleCategory = "productivity" | "business" | "personal" | "creative";

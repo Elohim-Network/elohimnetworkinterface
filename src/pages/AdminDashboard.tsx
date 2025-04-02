@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useModules } from '@/hooks/useModules';
 import { Module } from '@/types/marketplace';
+import { ModuleCategory } from '@/types/modules';
 import { toast } from 'sonner';
 
 // Mock sales data
@@ -40,7 +41,7 @@ const AdminDashboard = () => {
     // Fetch modules data
     const fetchModules = async () => {
       // This would be an API call in a real app
-      const mods = [
+      const mods: Module[] = [
         {
           id: 'voice-module',
           name: 'Advanced Voice Controls',
@@ -75,7 +76,7 @@ const AdminDashboard = () => {
           rating: 4.5,
           sales: 87,
           isInstalled: false,
-          isNew: true
+          isNew: false
         },
         {
           id: 'image-generation',

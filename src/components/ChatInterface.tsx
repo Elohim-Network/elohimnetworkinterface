@@ -1,4 +1,3 @@
-
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { useVoice } from '@/hooks/useVoice';
@@ -15,7 +14,6 @@ import ModulePromotion from '@/components/ModulePromotion';
 import AdminModeToggle from '@/components/AdminModeToggle';
 import { toast } from 'sonner';
 
-// Remove handleUpdateConnectionConfig which is causing the error
 const ChatInterface: React.FC = () => {
   const { 
     sessions, 
@@ -73,11 +71,10 @@ const ChatInterface: React.FC = () => {
       setTimeout(() => setShowIntroduction(true), 1500);
     }
     
-    // Show promotion after some time for non-admin users
     if (!isAdminUser()) {
       const promotionTimer = setTimeout(() => {
         setShowPromotion(true);
-      }, 30000); // Show after 30 seconds
+      }, 30000);
       
       return () => clearTimeout(promotionTimer);
     }
@@ -97,7 +94,6 @@ const ChatInterface: React.FC = () => {
   };
   
   const toggleAvatar = () => {
-    // Check if avatar feature is unlocked
     if (!isFeatureUnlocked('avatar-module') && !isAdminUser()) {
       toast.info("Avatar feature requires the Avatar Customization module");
       return;
@@ -113,10 +109,9 @@ const ChatInterface: React.FC = () => {
   
   const dismissPromotion = () => {
     setShowPromotion(false);
-    // Show promotion again later
     setTimeout(() => {
       setShowPromotion(true);
-    }, 120000); // Show again after 2 minutes
+    }, 120000);
   };
   
   useEffect(() => {
@@ -141,9 +136,8 @@ const ChatInterface: React.FC = () => {
   
   useEffect(() => {
     if (handsFreeMode && transcript && !transcript.endsWith('...') && transcript.length > 10) {
-      // Check if hands-free mode is unlocked
       if (!isFeatureUnlocked('voice-module') && !isAdminUser()) {
-        toggleHandsFreeMode(); // Turn it off
+        toggleHandsFreeMode();
         toast.info("Hands-free mode requires the Advanced Voice Controls module");
         return;
       }
@@ -181,9 +175,7 @@ const ChatInterface: React.FC = () => {
     setIsSidebarCollapsed(prev => !prev);
   };
   
-  // Fix: Create a dummy function to handle connection config updates
   const handleUpdateConnectionConfig = () => {
-    // This is just a placeholder to fix the build error
     toast.info('Connection configuration updated');
   };
   
@@ -218,32 +210,33 @@ const ChatInterface: React.FC = () => {
       />
       
       <div className="flex-1 flex flex-col h-full">
-        <Header
-          title={currentSession.title}
-          isCollapsed={isSidebarCollapsed}
-          onToggleSidebar={toggleSidebar}
-          onUpdateConnectionConfig={handleUpdateConnectionConfig}
-          sessions={sessions}
-          onExportChats={sessions.length > 0 ? () => toast.info('Exporting conversations...') : undefined}
-          onImportChats={(sessions, merge) => toast.success(`Conversations ${merge ? 'merged' : 'imported'} successfully`)}
-          availableVoices={availableVoices}
-          currentVoiceId={currentVoiceId}
-          elevenLabsApiKey={elevenLabsApiKey}
-          onUpdateVoiceApiKey={updateApiKey}
-          onUpdateVoice={updateVoice}
-          onCloneVoice={cloneVoice}
-          onDeleteVoice={deleteCustomVoice}
-          onRefreshVoices={loadVoices}
-          useBrowserVoice={useBrowserVoice}
-          onToggleBrowserVoice={toggleBrowserVoice}
-        >
-          <div className="ml-auto mr-2">
+        <div className="flex flex-col">
+          <Header
+            title={currentSession.title}
+            isCollapsed={isSidebarCollapsed}
+            onToggleSidebar={toggleSidebar}
+            onUpdateConnectionConfig={handleUpdateConnectionConfig}
+            sessions={sessions}
+            onExportChats={sessions.length > 0 ? () => toast.info('Exporting conversations...') : undefined}
+            onImportChats={(sessions, merge) => toast.success(`Conversations ${merge ? 'merged' : 'imported'} successfully`)}
+            availableVoices={availableVoices}
+            currentVoiceId={currentVoiceId}
+            elevenLabsApiKey={elevenLabsApiKey}
+            onUpdateVoiceApiKey={updateApiKey}
+            onUpdateVoice={updateVoice}
+            onCloneVoice={cloneVoice}
+            onDeleteVoice={deleteCustomVoice}
+            onRefreshVoices={loadVoices}
+            useBrowserVoice={useBrowserVoice}
+            onToggleBrowserVoice={toggleBrowserVoice}
+          />
+          <div className="ml-auto mr-2 -mt-8 z-10 relative">
             <AdminModeToggle 
               isAdmin={isAdminUser()} 
               onToggle={setAdminStatus}
             />
           </div>
-        </Header>
+        </div>
         
         <div className="flex-1 relative">
           <ScrollArea className="h-full pb-20">
