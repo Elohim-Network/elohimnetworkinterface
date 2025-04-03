@@ -33,40 +33,23 @@ export function exportChatsToFile(sessions: ChatSession[], filename = "agent-elo
 
 /**
  * Import chat sessions from a local JSON file
- * @param mergeWithExisting Whether to merge with existing chats or replace them
  */
-export function importChatsFromFile(mergeWithExisting = false): Promise<{sessions: ChatSession[], merged: boolean}> {
+export async function importChatsFromFile(file: File): Promise<{sessions: ChatSession[], merged: boolean} | ChatSession[]> {
   return new Promise((resolve, reject) => {
     try {
-      // Create file input element
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".json";
-      
-      input.onchange = (e: Event) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (!file) {
-          reject(new Error("No file selected"));
-          return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const content = event.target?.result as string;
+          const sessions = JSON.parse(content) as ChatSession[];
+          resolve(sessions);
+        } catch (err) {
+          reject(new Error("Invalid JSON file"));
         }
-        
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          try {
-            const content = event.target?.result as string;
-            const sessions = JSON.parse(content) as ChatSession[];
-            resolve({ sessions, merged: mergeWithExisting });
-          } catch (err) {
-            reject(new Error("Invalid JSON file"));
-          }
-        };
-        
-        reader.onerror = () => reject(new Error("Failed to read file"));
-        reader.readAsText(file);
       };
       
-      // Trigger file selection dialog
-      input.click();
+      reader.onerror = () => reject(new Error("Failed to read file"));
+      reader.readAsText(file);
     } catch (error) {
       reject(error);
     }

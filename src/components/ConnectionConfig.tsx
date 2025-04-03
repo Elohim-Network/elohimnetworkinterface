@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -180,7 +181,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
             if (importResult && typeof importResult === 'object' && 'sessions' in importResult && 'merged' in importResult) {
               onImportChats(importResult.sessions, importResult.merged);
             } else {
-              onImportChats(importResult as unknown as ChatSession[], false);
+              onImportChats(importResult as ChatSession[], false);
             }
             toast.success('Chats imported successfully');
           }
