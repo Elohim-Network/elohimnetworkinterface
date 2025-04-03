@@ -15,6 +15,7 @@ import VoiceRecorder from './VoiceRecorder';
 import * as browserVoiceService from '@/services/browserVoiceService';
 import { testMistralConnection, testStableDiffusionConnection } from '@/services/localAiService';
 import ConnectionTester from './ConnectionTester';
+import { ChatSession } from '@/types/chat';
 
 interface ConnectionConfigProps {
   onUpdate: (config: {
@@ -23,9 +24,9 @@ interface ConnectionConfigProps {
     mistralModel: string;
     sdModel: string;
   }) => void;
-  sessions?: any[];
+  sessions?: ChatSession[];
   onExportChats?: () => void;
-  onImportChats?: (sessions: any[]) => void;
+  onImportChats?: (sessions: ChatSession[], merge?: boolean) => void;
   // Voice related props
   availableVoices?: VoiceInfo[];
   currentVoiceId?: string;
@@ -122,7 +123,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       } else {
         toast.error('Failed to create voice');
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`Error: ${error.message}`);
     } finally {
       setIsCloning(false);
@@ -140,7 +141,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       } else {
         toast.error('Failed to delete voice');
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`Error: ${error.message}`);
     } finally {
       setIsDeleting(false);
@@ -154,7 +155,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
     try {
       await onRefreshVoices();
       toast.success('Voices refreshed successfully');
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`Error: ${error.message}`);
     } finally {
       setIsRefreshing(false);
@@ -177,12 +178,18 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       if (target.files && target.files.length > 0) {
         const file = target.files[0];
         try {
-          const result = await importChatsFromFile(file);
-          if (onImportChats && result) {
-            onImportChats(result);
+          const importResult = await importChatsFromFile(file);
+          if (onImportChats && importResult) {
+            // Check if the result has the expected format with sessions and merged properties
+            if (importResult.sessions && typeof importResult.merged === 'boolean') {
+              onImportChats(importResult.sessions, importResult.merged);
+            } else {
+              // Handle as a direct array for backward compatibility
+              onImportChats(importResult as ChatSession[], false);
+            }
             toast.success('Chats imported successfully');
           }
-        } catch (error) {
+        } catch (error: any) {
           toast.error(`Import failed: ${error.message}`);
         }
       }
@@ -195,7 +202,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
     try {
       await setSaveLocation();
       toast.success('Save location set successfully');
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`Failed to set save location: ${error.message}`);
     }
   };
@@ -332,7 +339,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                         </SelectTrigger>
                         <SelectContent>
                           {availableVoices.map((voice) => (
-                            <SelectItem key={voice.id} value={voice.id}>
+                            <SelectItem key={voice.voice_id} value={voice.voice_id}>
                               {voice.name}
                             </SelectItem>
                           ))}
@@ -340,8 +347,8 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                       </Select>
                       
                       {availableVoices.map((voice) => (
-                        voice.id === currentVoiceId && (
-                          <div key={`info-${voice.id}`} className="p-4 border rounded-md">
+                        voice.voice_id === currentVoiceId && (
+                          <div key={`info-${voice.voice_id}`} className="p-4 border rounded-md">
                             <div className="flex justify-between items-start mb-2">
                               <div>
                                 <h3 className="font-medium">{voice.name}</h3>
@@ -352,7 +359,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                onClick={() => handleDeleteVoice(voice.id)}
+                                onClick={() => handleDeleteVoice(voice.voice_id)}
                                 disabled={isDeleting}
                               >
                                 {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
@@ -414,7 +421,11 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                   
                   <div className="border-t pt-4">
                     <h3 className="font-medium mb-2">Test Voice</h3>
-                    <VoiceRecorder />
+                    <VoiceRecorder onVoiceCreated={() => {
+                      if (onRefreshVoices) {
+                        onRefreshVoices();
+                      }
+                    }} />
                   </div>
                 </>
               )}
@@ -426,22 +437,18 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                     <div>
                       <Label htmlFor="browser-voice-select">Select Voice</Label>
                       <Select
-                        value={browserVoiceService.getCurrentVoice()?.name || ''}
+                        value={browserVoiceService.getCurrentVoiceId()}
                         onValueChange={(val) => {
-                          const voices = browserVoiceService.getVoices();
-                          const selectedVoice = voices.find(v => v.name === val);
-                          if (selectedVoice) {
-                            browserVoiceService.setCurrentVoice(selectedVoice);
-                          }
+                          browserVoiceService.setCurrentVoiceId(val);
                         }}
                       >
                         <SelectTrigger id="browser-voice-select" className="mt-1">
                           <SelectValue placeholder="Select voice" />
                         </SelectTrigger>
                         <SelectContent>
-                          {browserVoiceService.getVoices().map((voice) => (
-                            <SelectItem key={voice.name} value={voice.name}>
-                              {voice.name} ({voice.lang})
+                          {browserVoiceService.getStoredVoices().map((voice) => (
+                            <SelectItem key={voice.id} value={voice.id}>
+                              {voice.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -449,40 +456,25 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                     </div>
                     
                     <div>
-                      <Label htmlFor="voice-rate">Rate</Label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          id="voice-rate"
-                          type="range"
-                          min="0.5"
-                          max="2"
-                          step="0.1"
-                          value={browserVoiceService.getRate()}
-                          onChange={(e) => browserVoiceService.setRate(parseFloat(e.target.value))}
-                          className="w-full"
-                        />
-                        <span className="w-12 text-center">{browserVoiceService.getRate()}x</span>
+                      <Label>Browser Speech Synthesis Voices</Label>
+                      <div className="max-h-[150px] overflow-y-auto border rounded-md p-2 mt-1">
+                        {window.speechSynthesis && window.speechSynthesis.getVoices().map((voice, index) => (
+                          <div key={index} className="text-sm p-1 hover:bg-muted/50 rounded cursor-pointer" onClick={() => {
+                            // Set as current voice if needed
+                            const utterance = new SpeechSynthesisUtterance("Test");
+                            utterance.voice = voice;
+                            window.speechSynthesis.speak(utterance);
+                          }}>
+                            {voice.name} ({voice.lang})
+                          </div>
+                        ))}
                       </div>
                     </div>
                     
-                    <div>
-                      <Label htmlFor="voice-pitch">Pitch</Label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          id="voice-pitch"
-                          type="range"
-                          min="0.5"
-                          max="2"
-                          step="0.1"
-                          value={browserVoiceService.getPitch()}
-                          onChange={(e) => browserVoiceService.setPitch(parseFloat(e.target.value))}
-                          className="w-full"
-                        />
-                        <span className="w-12 text-center">{browserVoiceService.getPitch()}x</span>
-                      </div>
-                    </div>
-                    
-                    <Button onClick={() => browserVoiceService.speak('This is a test of the browser text-to-speech functionality')}>
+                    <Button onClick={() => {
+                      const utterance = new SpeechSynthesisUtterance("This is a test of the browser text-to-speech functionality");
+                      window.speechSynthesis.speak(utterance);
+                    }}>
                       Test Voice
                     </Button>
                   </div>

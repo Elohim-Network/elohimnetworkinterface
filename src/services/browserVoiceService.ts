@@ -85,45 +85,6 @@ export const blobToDataUrl = (blob: Blob): Promise<string> => {
   });
 };
 
-// Speak text using a recorded voice sample (pitch-shifted based on text)
-export const speakWithRecordedVoice = async (text: string, voiceId: string): Promise<void> => {
-  try {
-    // Get the voice data
-    const voices = getStoredVoices();
-    const voice = voices.find(v => v.id === voiceId);
-    
-    if (!voice || !voice.samples.length) {
-      throw new Error('Voice sample not found');
-    }
-
-    // Use the Web Speech API with voice modification attempts
-    if ('speechSynthesis' in window) {
-      const synthesis = window.speechSynthesis;
-      const utterance = new SpeechSynthesisUtterance(text);
-      
-      // We'll first try to use the sample directly by playing it
-      // This is primitive and only demonstrates the concept
-      // A more advanced implementation would analyze and synthesize proper speech
-      playVoiceSample(voice.samples[0]);
-      
-      return;
-    } else {
-      throw new Error('Speech synthesis not supported in this browser');
-    }
-  } catch (error) {
-    console.error('Error using recorded voice:', error);
-    // Fall back to default browser voice
-    const utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
-  }
-};
-
-// Simple function to play an audio sample
-const playVoiceSample = (audioUrl: string): void => {
-  const audio = new Audio(audioUrl);
-  audio.play().catch(err => console.error('Error playing audio:', err));
-};
-
 // Get the current voice ID
 export const getCurrentVoiceId = (): string => {
   return localStorage.getItem('current-browser-voice-id') || '';
@@ -132,4 +93,61 @@ export const getCurrentVoiceId = (): string => {
 // Set the current voice ID
 export const setCurrentVoiceId = (voiceId: string): void => {
   localStorage.setItem('current-browser-voice-id', voiceId);
+};
+
+// Additional browser voice service functions
+export const getVoices = (): SpeechSynthesisVoice[] => {
+  if ('speechSynthesis' in window) {
+    return window.speechSynthesis.getVoices();
+  }
+  return [];
+};
+
+export const getCurrentVoice = (): SpeechSynthesisVoice | null => {
+  const voices = getVoices();
+  const storedVoiceName = localStorage.getItem('browser-voice-name');
+  
+  if (storedVoiceName) {
+    return voices.find(v => v.name === storedVoiceName) || null;
+  }
+  
+  return voices[0] || null;
+};
+
+export const setCurrentVoice = (voice: SpeechSynthesisVoice): void => {
+  localStorage.setItem('browser-voice-name', voice.name);
+};
+
+export const getRate = (): number => {
+  const rate = localStorage.getItem('browser-voice-rate');
+  return rate ? parseFloat(rate) : 1.0;
+};
+
+export const setRate = (rate: number): void => {
+  localStorage.setItem('browser-voice-rate', rate.toString());
+};
+
+export const getPitch = (): number => {
+  const pitch = localStorage.getItem('browser-voice-pitch');
+  return pitch ? parseFloat(pitch) : 1.0;
+};
+
+export const setPitch = (pitch: number): void => {
+  localStorage.setItem('browser-voice-pitch', pitch.toString());
+};
+
+export const speak = (text: string): void => {
+  if ('speechSynthesis' in window) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voice = getCurrentVoice();
+    
+    if (voice) {
+      utterance.voice = voice;
+    }
+    
+    utterance.rate = getRate();
+    utterance.pitch = getPitch();
+    
+    window.speechSynthesis.speak(utterance);
+  }
 };
