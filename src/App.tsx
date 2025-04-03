@@ -10,6 +10,7 @@ import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import Marketplace from "./pages/Marketplace";
 import AdminDashboard from "./pages/AdminDashboard";
+import JukeboxHero from "./components/JukeboxHero";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/app" element={<Index />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/jukebox" element={<JukeboxHero />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

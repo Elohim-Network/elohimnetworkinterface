@@ -5,7 +5,7 @@ import BusinessTools from '@/components/BusinessTools';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { ArrowLeft, ShoppingCart, AlertCircle } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, AlertCircle, Music } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { useExitIntent } from '@/hooks/useExitIntent';
@@ -16,7 +16,7 @@ import { useModules } from '@/hooks/useModules';
 const API_URL = "https://agentelohim.com/v1/chat/completions";
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<'chat' | 'tools'>('chat');
+  const [activeView, setActiveView] = useState<'chat' | 'tools' | 'jukebox'>('chat');
   const [backendStatus, setBackendStatus] = useState<{
     mistral: 'unknown' | 'connected' | 'disconnected';
     stableDiffusion: 'unknown' | 'connected' | 'disconnected';
@@ -59,6 +59,25 @@ const Index = () => {
     }
     
     setActiveView('tools');
+  };
+  
+  const handleJukeboxClick = () => {
+    // Check if jukebox is unlocked
+    if (!isFeatureUnlocked('jukebox-hero') && !isAdminUser()) {
+      toast.info("Jukebox Hero requires the Jukebox Hero module");
+      
+      // Show purchase confirmation
+      if (confirm("Would you like to purchase the Jukebox Hero module?")) {
+        purchaseModule('jukebox-hero').then(success => {
+          if (success) {
+            setActiveView('jukebox');
+          }
+        });
+      }
+      return;
+    }
+    
+    setActiveView('jukebox');
   };
 
   // Check backend connectivity
@@ -188,8 +207,10 @@ const Index = () => {
             onValueChange={(value) => {
               if (value === 'tools') {
                 handleBusinessToolsClick();
+              } else if (value === 'jukebox') {
+                handleJukeboxClick();
               } else {
-                setActiveView(value as 'chat' | 'tools');
+                setActiveView(value as 'chat' | 'tools' | 'jukebox');
               }
             }}
             className="w-auto"
@@ -197,6 +218,10 @@ const Index = () => {
             <TabsList>
               <TabsTrigger value="chat">Chat Interface</TabsTrigger>
               <TabsTrigger value="tools">Business Tools</TabsTrigger>
+              <TabsTrigger value="jukebox" className="flex items-center gap-1">
+                <Music className="h-4 w-4" />
+                Jukebox Hero
+              </TabsTrigger>
             </TabsList>
           </Tabs>
           
@@ -215,8 +240,14 @@ const Index = () => {
         <div className="flex-1 overflow-hidden">
           {activeView === 'chat' ? (
             <ChatInterface />
-          ) : (
+          ) : activeView === 'tools' ? (
             <BusinessTools />
+          ) : (
+            <iframe 
+              src="/jukebox" 
+              className="w-full h-full border-none"
+              title="Jukebox Hero"
+            />
           )}
         </div>
       </div>

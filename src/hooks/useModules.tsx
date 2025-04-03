@@ -109,6 +109,18 @@ export function useModules() {
         sales: 103,
         isInstalled: false,
         isNew: true
+      },
+      {
+        id: 'jukebox-hero',
+        name: 'Jukebox Hero',
+        description: 'AI-powered music promotion & monetization platform',
+        price: 39.99,
+        category: 'music',
+        featuredImage: '/placeholder.svg',
+        rating: 4.9,
+        sales: 42,
+        isInstalled: false,
+        isNew: true
       }
     ];
   };
