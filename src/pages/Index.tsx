@@ -5,18 +5,19 @@ import BusinessTools from '@/components/BusinessTools';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { ArrowLeft, ShoppingCart, AlertCircle, Music } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, AlertCircle, Music, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { useExitIntent } from '@/hooks/useExitIntent';
 import ConnectionStatus from '@/components/ConnectionStatus';
 import { useModules } from '@/hooks/useModules';
+import ConnectionTester from '@/components/ConnectionTester';
 
 // Define the new API endpoint for Cloudflare
 const API_URL = "https://agentelohim.com/v1/chat/completions";
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<'chat' | 'tools' | 'jukebox'>('chat');
+  const [activeView, setActiveView] = useState<'chat' | 'tools' | 'jukebox' | 'connections'>('chat');
   const [backendStatus, setBackendStatus] = useState<{
     mistral: 'unknown' | 'connected' | 'disconnected';
     stableDiffusion: 'unknown' | 'connected' | 'disconnected';
@@ -210,7 +211,7 @@ const Index = () => {
               } else if (value === 'jukebox') {
                 handleJukeboxClick();
               } else {
-                setActiveView(value as 'chat' | 'tools' | 'jukebox');
+                setActiveView(value as 'chat' | 'tools' | 'jukebox' | 'connections');
               }
             }}
             className="w-auto"
@@ -221,6 +222,10 @@ const Index = () => {
               <TabsTrigger value="jukebox" className="flex items-center gap-1">
                 <Music className="h-4 w-4" />
                 Jukebox Hero
+              </TabsTrigger>
+              <TabsTrigger value="connections" className="flex items-center gap-1">
+                <Settings className="h-4 w-4" />
+                Connections
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -242,6 +247,16 @@ const Index = () => {
             <ChatInterface />
           ) : activeView === 'tools' ? (
             <BusinessTools />
+          ) : activeView === 'connections' ? (
+            <div className="p-6 overflow-auto h-full">
+              <div className="max-w-3xl mx-auto">
+                <h1 className="text-2xl font-bold mb-6">Connection Settings</h1>
+                <p className="mb-6 text-muted-foreground">
+                  Test your connections to the AI services used across all modules in Agent Elohim.
+                </p>
+                <ConnectionTester />
+              </div>
+            </div>
           ) : (
             <iframe 
               src="/jukebox" 

@@ -1,3 +1,4 @@
+
 // Local AI Service - Communicates with locally running AI models or cloud-based APIs like Mistral
 // This service handles connections to various LLMs and Stable Diffusion
 
@@ -50,7 +51,7 @@ const getConfig = () => {
 const detectLlmBackend = (url: string): 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'unknown' => {
   const lowerUrl = url.toLowerCase();
   
-  if (lowerUrl.includes('mistral.ai')) {
+  if (lowerUrl.includes('mistral.ai') || lowerUrl.includes('agentelohim.com')) {
     return 'mistral-cloud';
   } else if (lowerUrl.includes('ollama')) {
     return 'ollama';
@@ -381,4 +382,53 @@ export function updateMistralApiKey(apiKey: string): void {
   const config = getConfig();
   config.mistralApiKey = apiKey;
   localStorage.setItem('local-ai-config', JSON.stringify(config));
+}
+
+// Add a function to test the connection to the Mistral API
+export async function testMistralConnection(): Promise<{success: boolean, message: string}> {
+  try {
+    const config = getConfig();
+    const response = await generateTextWithMistral([{role: 'user', content: 'Hello, this is a connection test.'}]);
+    
+    if (response.includes('Error:')) {
+      return {
+        success: false,
+        message: response
+      };
+    }
+    
+    return {
+      success: true,
+      message: 'Successfully connected to Mistral API!'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Connection failed: ${error.message}`
+    };
+  }
+}
+
+// Add a function to test the connection to the Stable Diffusion API
+export async function testStableDiffusionConnection(): Promise<{success: boolean, message: string}> {
+  try {
+    const response = await generateImageWithStableDiffusion('A simple test image of a blue circle');
+    
+    if (response.includes('Error:')) {
+      return {
+        success: false,
+        message: response
+      };
+    }
+    
+    return {
+      success: true,
+      message: 'Successfully connected to Stable Diffusion API!'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Connection failed: ${error.message}`
+    };
+  }
 }

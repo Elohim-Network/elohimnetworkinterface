@@ -12,7 +12,15 @@ import Marketplace from "./pages/Marketplace";
 import AdminDashboard from "./pages/AdminDashboard";
 import JukeboxHero from "./components/JukeboxHero";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      refetchOnWindowFocus: false,
+    },
+  }
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
