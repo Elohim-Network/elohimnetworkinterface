@@ -151,3 +151,12 @@ export const speak = (text: string): void => {
     window.speechSynthesis.speak(utterance);
   }
 };
+
+// Add the missing function that's referenced in useVoice.tsx
+export const speakWithRecordedVoice = (text: string, voiceId?: string): void => {
+  // For now, just use the regular speak function
+  // In a real implementation, this would use the recorded voice data
+  speak(text);
+  
+  console.log(`Speaking with recorded voice ID: ${voiceId || getCurrentVoiceId()}`);
+};

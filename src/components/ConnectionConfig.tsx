@@ -181,11 +181,11 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
           const importResult = await importChatsFromFile(file);
           if (onImportChats && importResult) {
             // Check if the result has the expected format with sessions and merged properties
-            if (importResult.sessions && typeof importResult.merged === 'boolean') {
+            if ('sessions' in importResult && 'merged' in importResult) {
               onImportChats(importResult.sessions, importResult.merged);
             } else {
               // Handle as a direct array for backward compatibility
-              onImportChats(importResult as ChatSession[], false);
+              onImportChats(importResult as unknown as ChatSession[], false);
             }
             toast.success('Chats imported successfully');
           }

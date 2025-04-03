@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { PanelLeft, X } from 'lucide-react';
 import { createRipple } from '@/utils/animations';
-import ConnectionConfig from './ConnectionConfig';
+import ConnectionConfig from './ConnectionConfig'; // Ensure the import is correct
 import { ThemeToggle } from './theme-toggle';
 import { ChatSession } from '@/types/chat';
 import { VoiceInfo } from '@/hooks/useVoice';
