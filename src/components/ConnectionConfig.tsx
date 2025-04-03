@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -27,7 +26,6 @@ interface ConnectionConfigProps {
   sessions?: ChatSession[];
   onExportChats?: () => void;
   onImportChats?: (sessions: ChatSession[], merge?: boolean) => void;
-  // Voice related props
   availableVoices?: VoiceInfo[];
   currentVoiceId?: string;
   elevenLabsApiKey?: string;
@@ -36,7 +34,6 @@ interface ConnectionConfigProps {
   onCloneVoice?: (name: string, description: string, files: File[]) => Promise<VoiceInfo | null>;
   onDeleteVoice?: (voiceId: string) => Promise<boolean>;
   onRefreshVoices?: () => Promise<void>;
-  // Browser voice props
   useBrowserVoice?: boolean;
   onToggleBrowserVoice?: (use: boolean) => void;
 }
@@ -180,11 +177,9 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
         try {
           const importResult = await importChatsFromFile(file);
           if (onImportChats && importResult) {
-            // Check if the result has the expected format with sessions and merged properties
-            if ('sessions' in importResult && 'merged' in importResult) {
+            if (importResult && typeof importResult === 'object' && 'sessions' in importResult && 'merged' in importResult) {
               onImportChats(importResult.sessions, importResult.merged);
             } else {
-              // Handle as a direct array for backward compatibility
               onImportChats(importResult as unknown as ChatSession[], false);
             }
             toast.success('Chats imported successfully');
@@ -460,7 +455,6 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                       <div className="max-h-[150px] overflow-y-auto border rounded-md p-2 mt-1">
                         {window.speechSynthesis && window.speechSynthesis.getVoices().map((voice, index) => (
                           <div key={index} className="text-sm p-1 hover:bg-muted/50 rounded cursor-pointer" onClick={() => {
-                            // Set as current voice if needed
                             const utterance = new SpeechSynthesisUtterance("Test");
                             utterance.voice = voice;
                             window.speechSynthesis.speak(utterance);
