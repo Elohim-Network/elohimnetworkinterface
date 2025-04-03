@@ -48,7 +48,7 @@ const getConfig = () => {
  * Detect which LLM backend is being used based on URL
  * This helps format requests correctly for different APIs
  */
-const detectLlmBackend = (url: string): 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'unknown' => {
+const detectLlmBackend = (url: string): 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'api-generate' | 'unknown' => {
   const lowerUrl = url.toLowerCase();
   
   if (lowerUrl.includes('mistral.ai') || lowerUrl.includes('agentelohim.com')) {
@@ -57,6 +57,8 @@ const detectLlmBackend = (url: string): 'mistral-cloud' | 'openai-compatible' | 
     return 'ollama';
   } else if (lowerUrl.includes('lmstudio')) {
     return 'lmstudio';
+  } else if (lowerUrl.includes('/api/generate')) {
+    return 'api-generate';
   } else if (lowerUrl.includes('/v1/') || lowerUrl.includes('/chat/completions')) {
     return 'openai-compatible';
   }
@@ -69,9 +71,17 @@ const detectLlmBackend = (url: string): 'mistral-cloud' | 'openai-compatible' | 
  */
 const formatMessages = (
   messages: { role: string; content: string }[], 
-  backend: 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'unknown'
+  backend: 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'api-generate' | 'unknown'
 ) => {
-  // For now, all services use the same message format
+  // For most APIs, we use the standard message format
+  if (backend === 'api-generate') {
+    // Special case for /api/generate endpoint which may have a different format
+    // Extract just the last user message content for simple API endpoints
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    return lastUserMessage ? lastUserMessage.content : messages[messages.length - 1].content;
+  }
+  
+  // For all other backends, return the full messages array
   return messages;
 };
 
@@ -89,7 +99,38 @@ export async function generateTextWithMistral(
     
     // Detect which backend we're working with
     const backend = detectLlmBackend(apiUrl);
-    const formattedMessages = formatMessages(messages, backend);
+    console.log(`Detected backend: ${backend}`);
+    
+    // Special case for /api/generate endpoint which uses a different format
+    if (backend === 'api-generate') {
+      const lastMessageContent = formatMessages(messages, backend) as string;
+      console.log("Using /api/generate endpoint format with content:", lastMessageContent);
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: lastMessageContent,
+          model: modelName,
+          temperature: 0.7,
+          max_tokens: 800,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorStatus = response.status;
+        const errorData = await response.text();
+        throw new Error(`Failed to generate text: ${errorData} (Status: ${errorStatus})`);
+      }
+      
+      const data = await response.json();
+      return data.response || data.text || data.generated_text || 'No response generated';
+    }
+    
+    // Standard handling for other API formats
+    const formattedMessages = formatMessages(messages, backend) as Array<{ role: string; content: string }>;
     
     // Build request body according to the detected backend
     let requestBody: any = {};
@@ -164,6 +205,20 @@ export async function generateTextWithMistral(
         errorData = "Could not parse error response";
       }
       console.error(`LLM API error (${errorStatus}):`, errorData);
+      
+      // If we get a 404 or other error and we're not using the /api/generate endpoint,
+      // try falling back to it
+      if (backend !== 'api-generate' && !apiUrl.includes('/api/generate')) {
+        console.log("Trying fallback to /api/generate endpoint");
+        // Construct fallback URL by replacing the endpoint or adding it
+        const fallbackUrl = apiUrl.includes('/v1') 
+          ? apiUrl.replace(/\/v1\/.*$/, '/api/generate') 
+          : `${apiUrl}/api/generate`.replace(/\/\//g, '/');
+        
+        console.log(`Fallback URL: ${fallbackUrl}`);
+        return generateTextWithMistral(messages, fallbackUrl);
+      }
+      
       if (errorStatus === 403) {
         return `Error: Access forbidden (403). This could be due to an invalid API key, insufficient permissions, or request restrictions. Please check your API key in settings.`;
       }
@@ -192,6 +247,7 @@ export async function generateTextWithMistral(
         generatedText = data.choices?.[0]?.message?.content || 
                         data.message?.content || 
                         data.response || 
+                        data.generated_text ||
                         'No response generated';
         break;
     }
