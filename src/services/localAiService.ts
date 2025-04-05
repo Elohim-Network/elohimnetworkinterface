@@ -1,8 +1,12 @@
+
 // Local AI Service - Communicates with locally running AI models or cloud-based APIs like Mistral
 // This service handles connections to various LLMs and Stable Diffusion
 
 // The official Mistral AI API endpoint with the correct domain
 const MISTRAL_API_URL = "https://agentelohim.com/v1/chat/completions";
+
+// Define a consistent type for backend providers that includes 'api-generate'
+type ProviderType = 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'api-generate' | 'unknown';
 
 interface MistralCompletionRequest {
   model: string;
@@ -47,7 +51,7 @@ const getConfig = () => {
  * Detect which LLM backend is being used based on URL
  * This helps format requests correctly for different APIs
  */
-const detectLlmBackend = (url: string): 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'api-generate' | 'unknown' => {
+const detectLlmBackend = (url: string): ProviderType => {
   const lowerUrl = url.toLowerCase();
   
   if (lowerUrl.includes('mistral.ai') || lowerUrl.includes('agentelohim.com')) {
@@ -70,7 +74,7 @@ const detectLlmBackend = (url: string): 'mistral-cloud' | 'openai-compatible' | 
  */
 const formatMessages = (
   messages: { role: string; content: string }[], 
-  backend: 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'api-generate' | 'unknown'
+  backend: ProviderType
 ) => {
   // For most APIs, we use the standard message format
   if (backend === 'api-generate') {
