@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -176,13 +175,9 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       if (target.files && target.files.length > 0) {
         const file = target.files[0];
         try {
-          const importResult = await importChatsFromFile(file);
-          if (onImportChats && importResult) {
-            if (importResult && typeof importResult === 'object' && 'sessions' in importResult && 'merged' in importResult) {
-              onImportChats(importResult.sessions, importResult.merged);
-            } else {
-              onImportChats(importResult as ChatSession[], false);
-            }
+          const importedSessions = await importChatsFromFile(file);
+          if (onImportChats && importedSessions) {
+            onImportChats(importedSessions, false);
             toast.success('Chats imported successfully');
           }
         } catch (error: any) {

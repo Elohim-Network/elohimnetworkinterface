@@ -41,8 +41,15 @@ export async function importChatsFromFile(file: File): Promise<ChatSession[]> {
       reader.onload = (event) => {
         try {
           const content = event.target?.result as string;
-          const sessions = JSON.parse(content) as ChatSession[];
-          resolve(sessions);
+          const parsedContent = JSON.parse(content);
+          
+          // Add type guard to ensure we have a valid ChatSession array
+          if (Array.isArray(parsedContent) && 
+              parsedContent.every(item => isChatSession(item))) {
+            resolve(parsedContent as ChatSession[]);
+          } else {
+            reject(new Error("Invalid chat session format"));
+          }
         } catch (err) {
           reject(new Error("Invalid JSON file"));
         }
@@ -54,6 +61,19 @@ export async function importChatsFromFile(file: File): Promise<ChatSession[]> {
       reject(error);
     }
   });
+}
+
+/**
+ * Type guard to check if an object is a valid ChatSession
+ */
+function isChatSession(item: any): item is ChatSession {
+  return item && 
+         typeof item === 'object' && 
+         'id' in item &&
+         'title' in item &&
+         'messages' in item &&
+         'createdAt' in item &&
+         'updatedAt' in item;
 }
 
 /**

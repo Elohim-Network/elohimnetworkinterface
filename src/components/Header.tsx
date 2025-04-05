@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { PanelLeft, X } from 'lucide-react';
 import { createRipple } from '@/utils/animations';
-import ConnectionConfig from './ConnectionConfig'; // Ensure the import is correct
+import ConnectionConfig from './ConnectionConfig';
 import { ThemeToggle } from './theme-toggle';
 import { ChatSession } from '@/types/chat';
 import { VoiceInfo } from '@/hooks/useVoice';
@@ -21,7 +20,6 @@ interface HeaderProps {
   sessions?: ChatSession[];
   onExportChats?: () => void;
   onImportChats?: (sessions: ChatSession[], merge?: boolean) => void;
-  // Voice related props
   availableVoices?: VoiceInfo[];
   currentVoiceId?: string;
   elevenLabsApiKey?: string;
@@ -30,7 +28,6 @@ interface HeaderProps {
   onCloneVoice?: (name: string, description: string, files: File[]) => Promise<VoiceInfo | null>;
   onDeleteVoice?: (voiceId: string) => Promise<boolean>;
   onRefreshVoices?: () => Promise<void>;
-  // Browser voice props
   useBrowserVoice?: boolean;
   onToggleBrowserVoice?: (use: boolean) => void;
 }
@@ -67,14 +64,7 @@ const Header: React.FC<HeaderProps> = ({
 
   const handleImportChats = (importedSessions: ChatSession[]) => {
     if (onImportChats) {
-      // The merge parameter comes from the importChatsFromFile result
-      const result = importedSessions as unknown as { sessions: ChatSession[], merged: boolean };
-      if ('merged' in result) {
-        onImportChats(result.sessions, result.merged);
-      } else {
-        // Backward compatibility
-        onImportChats(importedSessions, false);
-      }
+      onImportChats(importedSessions, false);
     }
   };
 
@@ -103,7 +93,6 @@ const Header: React.FC<HeaderProps> = ({
             sessions={sessions}
             onExportChats={onExportChats}
             onImportChats={handleImportChats}
-            // Voice related props
             availableVoices={availableVoices}
             currentVoiceId={currentVoiceId}
             elevenLabsApiKey={elevenLabsApiKey}
@@ -112,7 +101,6 @@ const Header: React.FC<HeaderProps> = ({
             onCloneVoice={onCloneVoice}
             onDeleteVoice={onDeleteVoice}
             onRefreshVoices={onRefreshVoices}
-            // Browser voice props
             useBrowserVoice={useBrowserVoice}
             onToggleBrowserVoice={onToggleBrowserVoice}
           />
