@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import * as browserVoiceService from '@/services/browserVoiceService';
 
 interface VoiceRecorderProps {
-  onVoiceCreated?: () => void;
+  onVoiceCreated: () => void;
 }
 
 const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onVoiceCreated }) => {
@@ -126,9 +126,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onVoiceCreated }) => {
       setAudioUrl(null);
       setRecordedChunks([]);
       
-      if (onVoiceCreated) {
-        onVoiceCreated();
-      }
+      onVoiceCreated();
       loadSavedVoices();
     } catch (error) {
       toast.error('Failed to save voice sample');
@@ -143,9 +141,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({ onVoiceCreated }) => {
       if (success) {
         toast.success('Voice sample deleted');
         loadSavedVoices();
-        if (onVoiceCreated) {
-          onVoiceCreated();
-        }
+        onVoiceCreated();
       } else {
         toast.error('Failed to delete voice sample');
       }

@@ -1,7 +1,7 @@
+
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useChat } from '@/hooks/useChat';
 import { useVoice } from '@/hooks/useVoice';
-import { useModules } from '@/hooks/useModules';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Header from '@/components/Header';
 import Sidebar from '@/components/Sidebar';
@@ -10,10 +10,9 @@ import MessageBubble from '@/components/MessageBubble';
 import VoiceControl from '@/components/VoiceControl';
 import ElohimIntroduction from '@/components/ElohimIntroduction';
 import ElohimAvatar from '@/components/ElohimAvatar';
-import ModulePromotion from '@/components/ModulePromotion';
-import AdminModeToggle from '@/components/AdminModeToggle';
 import { toast } from 'sonner';
 
+// Remove handleUpdateConnectionConfig which is causing the error
 const ChatInterface: React.FC = () => {
   const { 
     sessions, 
@@ -50,19 +49,10 @@ const ChatInterface: React.FC = () => {
     toggleBrowserVoice
   } = useVoice();
   
-  const {
-    promotedModule,
-    isFeatureUnlocked,
-    isAdminUser,
-    setAdminStatus,
-    purchaseModule,
-  } = useModules();
-  
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [showVoiceControls, setShowVoiceControls] = useState(false);
   const [showIntroduction, setShowIntroduction] = useState(false);
   const [showAvatar, setShowAvatar] = useState(false);
-  const [showPromotion, setShowPromotion] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
@@ -70,15 +60,7 @@ const ChatInterface: React.FC = () => {
     if (!hasSeenIntro) {
       setTimeout(() => setShowIntroduction(true), 1500);
     }
-    
-    if (!isAdminUser()) {
-      const promotionTimer = setTimeout(() => {
-        setShowPromotion(true);
-      }, 30000);
-      
-      return () => clearTimeout(promotionTimer);
-    }
-  }, [isAdminUser]);
+  }, []);
   
   const handleIntroductionComplete = () => {
     setShowIntroduction(false);
@@ -94,24 +76,7 @@ const ChatInterface: React.FC = () => {
   };
   
   const toggleAvatar = () => {
-    if (!isFeatureUnlocked('avatar-module') && !isAdminUser()) {
-      toast.info("Avatar feature requires the Avatar Customization module");
-      return;
-    }
-    
     setShowAvatar(prev => !prev);
-  };
-  
-  const handlePromotionPurchase = async (moduleId: string) => {
-    await purchaseModule(moduleId);
-    setShowPromotion(false);
-  };
-  
-  const dismissPromotion = () => {
-    setShowPromotion(false);
-    setTimeout(() => {
-      setShowPromotion(true);
-    }, 120000);
   };
   
   useEffect(() => {
@@ -136,12 +101,6 @@ const ChatInterface: React.FC = () => {
   
   useEffect(() => {
     if (handsFreeMode && transcript && !transcript.endsWith('...') && transcript.length > 10) {
-      if (!isFeatureUnlocked('voice-module') && !isAdminUser()) {
-        toggleHandsFreeMode();
-        toast.info("Hands-free mode requires the Advanced Voice Controls module");
-        return;
-      }
-      
       const timer = setTimeout(() => {
         if (transcript) {
           sendMessage(transcript);
@@ -151,7 +110,7 @@ const ChatInterface: React.FC = () => {
       
       return () => clearTimeout(timer);
     }
-  }, [handsFreeMode, transcript, sendMessage, resetTranscript, isFeatureUnlocked, isAdminUser, toggleHandsFreeMode]);
+  }, [handsFreeMode, transcript, sendMessage, resetTranscript]);
   
   useEffect(() => {
     if (isListening || isSpeaking || handsFreeMode) {
@@ -175,7 +134,9 @@ const ChatInterface: React.FC = () => {
     setIsSidebarCollapsed(prev => !prev);
   };
   
+  // Fix: Create a dummy function to handle connection config updates
   const handleUpdateConnectionConfig = () => {
+    // This is just a placeholder to fix the build error
     toast.info('Connection configuration updated');
   };
   
@@ -210,33 +171,25 @@ const ChatInterface: React.FC = () => {
       />
       
       <div className="flex-1 flex flex-col h-full">
-        <div className="flex flex-col">
-          <Header
-            title={currentSession.title}
-            isCollapsed={isSidebarCollapsed}
-            onToggleSidebar={toggleSidebar}
-            onUpdateConnectionConfig={handleUpdateConnectionConfig}
-            sessions={sessions}
-            onExportChats={sessions.length > 0 ? () => toast.info('Exporting conversations...') : undefined}
-            onImportChats={(sessions, merge) => toast.success(`Conversations ${merge ? 'merged' : 'imported'} successfully`)}
-            availableVoices={availableVoices}
-            currentVoiceId={currentVoiceId}
-            elevenLabsApiKey={elevenLabsApiKey}
-            onUpdateVoiceApiKey={updateApiKey}
-            onUpdateVoice={updateVoice}
-            onCloneVoice={cloneVoice}
-            onDeleteVoice={deleteCustomVoice}
-            onRefreshVoices={loadVoices}
-            useBrowserVoice={useBrowserVoice}
-            onToggleBrowserVoice={toggleBrowserVoice}
-          />
-          <div className="ml-auto mr-2 -mt-8 z-10 relative">
-            <AdminModeToggle 
-              isAdmin={isAdminUser()} 
-              onToggle={setAdminStatus}
-            />
-          </div>
-        </div>
+        <Header
+          title={currentSession.title}
+          isCollapsed={isSidebarCollapsed}
+          onToggleSidebar={toggleSidebar}
+          onUpdateConnectionConfig={handleUpdateConnectionConfig}
+          sessions={sessions}
+          onExportChats={sessions.length > 0 ? () => toast.info('Exporting conversations...') : undefined}
+          onImportChats={(sessions, merge) => toast.success(`Conversations ${merge ? 'merged' : 'imported'} successfully`)}
+          availableVoices={availableVoices}
+          currentVoiceId={currentVoiceId}
+          elevenLabsApiKey={elevenLabsApiKey}
+          onUpdateVoiceApiKey={updateApiKey}
+          onUpdateVoice={updateVoice}
+          onCloneVoice={cloneVoice}
+          onDeleteVoice={deleteCustomVoice}
+          onRefreshVoices={loadVoices}
+          useBrowserVoice={useBrowserVoice}
+          onToggleBrowserVoice={toggleBrowserVoice}
+        />
         
         <div className="flex-1 relative">
           <ScrollArea className="h-full pb-20">
@@ -255,26 +208,6 @@ const ChatInterface: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
-          
-          {showPromotion && promotedModule && !isAdminUser() && (
-            <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-20 w-5/6 max-w-md">
-              <div className="relative">
-                <button
-                  onClick={dismissPromotion}
-                  className="absolute top-2 right-2 z-10 rounded-full h-5 w-5 bg-black/20 
-                  hover:bg-black/40 flex items-center justify-center text-white"
-                  aria-label="Close promotion"
-                >
-                  ✕
-                </button>
-                <ModulePromotion
-                  module={promotedModule}
-                  onPurchase={handlePromotionPurchase}
-                  className="shadow-xl"
-                />
-              </div>
-            </div>
-          )}
           
           {(showVoiceControls || handsFreeMode) && (
             <div className="absolute top-4 right-4 z-10">

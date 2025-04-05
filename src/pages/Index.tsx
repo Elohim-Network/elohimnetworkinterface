@@ -1,24 +1,18 @@
+
 import React, { useEffect, useState } from 'react';
 import ChatInterface from '@/components/ChatInterface';
 import BusinessTools from '@/components/BusinessTools';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { ArrowLeft, ShoppingCart, AlertCircle, Music, Settings } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { useExitIntent } from '@/hooks/useExitIntent';
 import ConnectionStatus from '@/components/ConnectionStatus';
-import { useModules } from '@/hooks/useModules';
-import ConnectionTester from '@/components/ConnectionTester';
-
-const API_ENDPOINTS = {
-  CHAT_COMPLETIONS: "https://agentelohim.com/v1/chat/completions",
-  API_GENERATE: "https://agentelohim.com/api/generate"
-};
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<'chat' | 'tools' | 'jukebox' | 'connections'>('chat');
+  const [activeView, setActiveView] = useState<'chat' | 'tools'>('chat');
   const [backendStatus, setBackendStatus] = useState<{
     mistral: 'unknown' | 'connected' | 'disconnected';
     stableDiffusion: 'unknown' | 'connected' | 'disconnected';
@@ -33,50 +27,17 @@ const Index = () => {
     idleTime: 30000, // 30 seconds
     cookieDuration: 7 // Remember for 7 days
   });
-  
-  const { isFeatureUnlocked, isAdminUser, purchaseModule } = useModules();
 
   const handleAcceptOffer = () => {
     closeExitIntent();
     toast.success("Your free agent has been activated! Welcome to the Elohim Network.");
+    // Set a flag to indicate the user accepted the offer
     localStorage.setItem('agent-activated', 'true');
   };
-  
-  const handleBusinessToolsClick = () => {
-    if (!isFeatureUnlocked('business-tools') && !isAdminUser()) {
-      toast.info("Business Tools require the Business Tools Suite module");
-      
-      if (confirm("Would you like to purchase the Business Tools Suite?")) {
-        purchaseModule('business-tools').then(success => {
-          if (success) {
-            setActiveView('tools');
-          }
-        });
-      }
-      return;
-    }
-    
-    setActiveView('tools');
-  };
-  
-  const handleJukeboxClick = () => {
-    if (!isFeatureUnlocked('jukebox-hero') && !isAdminUser()) {
-      toast.info("Jukebox Hero requires the Jukebox Hero module");
-      
-      if (confirm("Would you like to purchase the Jukebox Hero module?")) {
-        purchaseModule('jukebox-hero').then(success => {
-          if (success) {
-            setActiveView('jukebox');
-          }
-        });
-      }
-      return;
-    }
-    
-    setActiveView('jukebox');
-  };
 
+  // Check backend connectivity
   const checkBackendConnectivity = async () => {
+    // Check Mistral connectivity
     try {
       const response = await fetch(getConfig().mistralUrl, {
         method: 'OPTIONS',
@@ -91,6 +52,7 @@ const Index = () => {
       setBackendStatus(prev => ({...prev, mistral: 'disconnected'}));
     }
     
+    // Check Stable Diffusion connectivity
     try {
       const response = await fetch(getConfig().stableDiffusionUrl, {
         method: 'OPTIONS',
@@ -106,6 +68,7 @@ const Index = () => {
     }
   };
 
+  // Helper to get config
   const getConfig = () => {
     const savedConfig = localStorage.getItem('local-ai-config');
     if (savedConfig) {
@@ -116,80 +79,70 @@ const Index = () => {
       }
     }
     
+    // Default configuration with the updated URLs
     return {
-      mistralUrl: API_ENDPOINTS.CHAT_COMPLETIONS,
+      mistralUrl: 'http://localhost:11434/v1/chat/completions',
       stableDiffusionUrl: 'http://127.0.0.1:8188',
-      mistralModel: 'mistral-7b-instruct',
+      mistralModel: 'mistral-7b',
       sdModel: 'stable-diffusion-v1-5'
     };
   };
 
-  const detectAndConfigureEndpoints = async () => {
-    let config = getConfig();
-    let updated = false;
-    let mistralEndpoint = config.mistralUrl;
+  // Load correct configuration on component mount
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('local-ai-config');
+    const correctMistralUrl = 'http://localhost:11434/v1/chat/completions';
+    const correctSdUrl = 'http://127.0.0.1:8188';
     
-    try {
-      const response = await fetch(API_ENDPOINTS.CHAT_COMPLETIONS, {
-        method: 'OPTIONS',
-        headers: { 'Content-Type': 'application/json' },
-      }).catch(() => null);
-      
-      if (response && response.ok) {
-        mistralEndpoint = API_ENDPOINTS.CHAT_COMPLETIONS;
-        console.log("Chat completions endpoint is available");
-      } else {
-        try {
-          const genResponse = await fetch(API_ENDPOINTS.API_GENERATE, {
-            method: 'OPTIONS',
-            headers: { 'Content-Type': 'application/json' },
-          }).catch(() => null);
-          
-          if (genResponse && genResponse.ok) {
-            mistralEndpoint = API_ENDPOINTS.API_GENERATE;
-            console.log("API generate endpoint is available");
-          }
-        } catch (e) {
-          console.log("API generate endpoint check failed:", e);
-        }
-      }
-    } catch (e) {
-      console.log("Chat completions endpoint check failed:", e);
-      
+    if (savedConfig) {
       try {
-        const genResponse = await fetch(API_ENDPOINTS.API_GENERATE, {
-          method: 'OPTIONS',
-          headers: { 'Content-Type': 'application/json' },
-        }).catch(() => null);
+        const config = JSON.parse(savedConfig);
+        let updated = false;
         
-        if (genResponse && genResponse.ok) {
-          mistralEndpoint = API_ENDPOINTS.API_GENERATE;
-          console.log("API generate endpoint is available");
+        // Check if the Mistral URL needs to be updated
+        if (config.mistralUrl !== correctMistralUrl) {
+          config.mistralUrl = correctMistralUrl;
+          updated = true;
+        }
+        
+        // Check if the Stable Diffusion URL needs to be updated
+        if (config.stableDiffusionUrl !== correctSdUrl) {
+          config.stableDiffusionUrl = correctSdUrl;
+          updated = true;
+        }
+        
+        if (updated) {
+          localStorage.setItem('local-ai-config', JSON.stringify(config));
+          console.log('Updated API endpoints to the correct URLs:', correctMistralUrl, correctSdUrl);
+          toast.success('AI model connections updated to the correct endpoints');
         }
       } catch (e) {
-        console.log("API generate endpoint check failed:", e);
+        console.error('Error parsing saved config:', e);
+        
+        // If there's an error, set the correct configuration
+        const defaultConfig = {
+          mistralUrl: correctMistralUrl,
+          stableDiffusionUrl: correctSdUrl,
+          mistralModel: 'mistral-7b',
+          sdModel: 'stable-diffusion-v1-5'
+        };
+        localStorage.setItem('local-ai-config', JSON.stringify(defaultConfig));
       }
+    } else {
+      // If no saved config exists, create one with the correct URLs
+      const defaultConfig = {
+        mistralUrl: correctMistralUrl,
+        stableDiffusionUrl: correctSdUrl,
+        mistralModel: 'mistral-7b',
+        sdModel: 'stable-diffusion-v1-5'
+      };
+      localStorage.setItem('local-ai-config', JSON.stringify(defaultConfig));
     }
     
-    if (config.mistralUrl !== mistralEndpoint) {
-      config.mistralUrl = mistralEndpoint;
-      updated = true;
-      console.log(`Updated Mistral endpoint to: ${mistralEndpoint}`);
-    }
+    // Check backend connectivity
+    checkBackendConnectivity();
     
-    if (updated) {
-      localStorage.setItem('local-ai-config', JSON.stringify(config));
-      toast.success(`AI model connection updated to: ${mistralEndpoint}`);
-    }
-    
-    return config;
-  };
-
-  useEffect(() => {
-    detectAndConfigureEndpoints().then(() => {
-      checkBackendConnectivity();
-    });
-    
+    // Set up an interval to check connectivity periodically
     const intervalId = setInterval(checkBackendConnectivity, 30000); // every 30 seconds
     
     return () => clearInterval(intervalId);
@@ -206,28 +159,12 @@ const Index = () => {
           
           <Tabs 
             value={activeView} 
-            onValueChange={(value) => {
-              if (value === 'tools') {
-                handleBusinessToolsClick();
-              } else if (value === 'jukebox') {
-                handleJukeboxClick();
-              } else {
-                setActiveView(value as 'chat' | 'tools' | 'jukebox' | 'connections');
-              }
-            }}
+            onValueChange={(value) => setActiveView(value as 'chat' | 'tools')}
             className="w-auto"
           >
             <TabsList>
               <TabsTrigger value="chat">Chat Interface</TabsTrigger>
               <TabsTrigger value="tools">Business Tools</TabsTrigger>
-              <TabsTrigger value="jukebox" className="flex items-center gap-1">
-                <Music className="h-4 w-4" />
-                Jukebox Hero
-              </TabsTrigger>
-              <TabsTrigger value="connections" className="flex items-center gap-1">
-                <Settings className="h-4 w-4" />
-                Connections
-              </TabsTrigger>
             </TabsList>
           </Tabs>
           
@@ -246,24 +183,8 @@ const Index = () => {
         <div className="flex-1 overflow-hidden">
           {activeView === 'chat' ? (
             <ChatInterface />
-          ) : activeView === 'tools' ? (
-            <BusinessTools />
-          ) : activeView === 'connections' ? (
-            <div className="p-6 overflow-auto h-full">
-              <div className="max-w-3xl mx-auto">
-                <h1 className="text-2xl font-bold mb-6">Connection Settings</h1>
-                <p className="mb-6 text-muted-foreground">
-                  Test your connections to the AI services used across all modules in Agent Elohim.
-                </p>
-                <ConnectionTester />
-              </div>
-            </div>
           ) : (
-            <iframe 
-              src="/jukebox" 
-              className="w-full h-full border-none"
-              title="Jukebox Hero"
-            />
+            <BusinessTools />
           )}
         </div>
       </div>

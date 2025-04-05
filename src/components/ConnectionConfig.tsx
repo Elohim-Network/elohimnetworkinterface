@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Settings, Save, Upload, Download, HardDrive, Trash2, PlusCircle, KeyRound, RefreshCw, Check, X, Loader2 } from 'lucide-react';
+import { Settings, Save, Upload, Download, HardDrive, Trash2, PlusCircle, KeyRound, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,9 +13,6 @@ import { VoiceInfo } from '@/hooks/useVoice';
 import { Switch } from '@/components/ui/switch';
 import VoiceRecorder from './VoiceRecorder';
 import * as browserVoiceService from '@/services/browserVoiceService';
-import { testMistralConnection, testStableDiffusionConnection } from '@/services/localAiService';
-import ConnectionTester from './ConnectionTester';
-import { ChatSession } from '@/types/chat';
 
 interface ConnectionConfigProps {
   onUpdate: (config: {
@@ -23,9 +21,9 @@ interface ConnectionConfigProps {
     mistralModel: string;
     sdModel: string;
   }) => void;
-  sessions?: ChatSession[];
   onExportChats?: () => void;
-  onImportChats?: (sessions: ChatSession[], merge?: boolean) => void;
+  onImportChats?: (sessions: any[], merge?: boolean) => void;
+  sessions?: any[];
   availableVoices?: VoiceInfo[];
   currentVoiceId?: string;
   elevenLabsApiKey?: string;
@@ -38,90 +36,224 @@ interface ConnectionConfigProps {
   onToggleBrowserVoice?: (use: boolean) => void;
 }
 
-const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
+const ConnectionConfig: React.FC<ConnectionConfigProps> = ({ 
   onUpdate,
-  sessions,
   onExportChats,
   onImportChats,
-  availableVoices,
-  currentVoiceId,
-  elevenLabsApiKey,
+  sessions = [],
+  availableVoices = [],
+  currentVoiceId = '',
+  elevenLabsApiKey = '',
   onUpdateApiKey,
   onUpdateVoice,
   onCloneVoice,
   onDeleteVoice,
   onRefreshVoices,
-  useBrowserVoice,
+  useBrowserVoice = false,
   onToggleBrowserVoice
 }) => {
-  const [mistralUrl, setMistralUrl] = useState(localStorage.getItem('mistralUrl') || 'http://localhost:11434');
-  const [stableDiffusionUrl, setStableDiffusionUrl] = useState(localStorage.getItem('stableDiffusionUrl') || 'http://localhost:7860');
-  const [mistralModel, setMistralModel] = useState(localStorage.getItem('mistralModel') || 'mistral');
-  const [sdModel, setSdModel] = useState(localStorage.getItem('sdModel') || 'sdxl');
-  const [apiKey, setApiKey] = useState(elevenLabsApiKey || '');
+  const [mistralUrl, setMistralUrl] = useState('http://localhost:11434/v1/chat/completions');
+  const [stableDiffusionUrl, setStableDiffusionUrl] = useState('http://localhost:7860/sdapi/v1/txt2img');
+  const [mistralModel, setMistralModel] = useState('mistral-7b');
+  const [sdModel, setSdModel] = useState('stable-diffusion-v1-5');
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("text");
+  const [presetName, setPresetName] = useState("");
+  const [presets, setPresets] = useState<{[key: string]: any}[]>([]);
+  const [apiKey, setApiKey] = useState(elevenLabsApiKey);
+  const [selectedVoiceId, setSelectedVoiceId] = useState(currentVoiceId);
   const [newVoiceName, setNewVoiceName] = useState('');
-  const [newVoiceDesc, setNewVoiceDesc] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
+  const [newVoiceDescription, setNewVoiceDescription] = useState('');
+  const [voiceFiles, setVoiceFiles] = useState<File[]>([]);
   const [isCloning, setIsCloning] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [tabValue, setTabValue] = useState("connections");
-  
-  const handleSave = () => {
-    localStorage.setItem('mistralUrl', mistralUrl);
-    localStorage.setItem('stableDiffusionUrl', stableDiffusionUrl);
-    localStorage.setItem('mistralModel', mistralModel);
-    localStorage.setItem('sdModel', sdModel);
+  const [browserVoices, setBrowserVoices] = useState<any[]>([]);
+  const [currentBrowserVoiceId, setCurrentBrowserVoiceId] = useState('');
+
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('local-ai-config');
+    if (savedConfig) {
+      try {
+        const config = JSON.parse(savedConfig);
+        setMistralUrl(config.mistralUrl || mistralUrl);
+        setStableDiffusionUrl(config.stableDiffusionUrl || stableDiffusionUrl);
+        setMistralModel(config.mistralModel || mistralModel);
+        setSdModel(config.sdModel || sdModel);
+      } catch (e) {
+        console.error('Error parsing saved config:', e);
+      }
+    }
     
-    onUpdate({
+    const savedPresets = localStorage.getItem('model-presets');
+    if (savedPresets) {
+      try {
+        const parsedPresets = JSON.parse(savedPresets);
+        const updatedPresets = parsedPresets.map((preset: any) => {
+          if (preset.name === "Mac M1/M2 Default") {
+            return {
+              ...preset,
+              mistralUrl: 'http://localhost:11434/v1/chat/completions'
+            };
+          }
+          return preset;
+        });
+        setPresets(updatedPresets);
+        localStorage.setItem('model-presets', JSON.stringify(updatedPresets));
+      } catch (e) {
+        console.error('Error parsing saved presets:', e);
+      }
+    } else {
+      const defaultPresets = [
+        {
+          name: "Mac M1/M2 Default",
+          mistralUrl: 'http://localhost:11434/v1/chat/completions',
+          stableDiffusionUrl: 'http://localhost:7860/sdapi/v1/txt2img',
+          mistralModel: 'mistral-7b',
+          sdModel: 'stable-diffusion-v1-5'
+        },
+        {
+          name: "Ollama/Automatic1111",
+          mistralUrl: 'http://localhost:11434/api/chat',
+          stableDiffusionUrl: 'http://localhost:7860/sdapi/v1/txt2img',
+          mistralModel: 'llama3',
+          sdModel: 'sdxl'
+        }
+      ];
+      setPresets(defaultPresets);
+      localStorage.setItem('model-presets', JSON.stringify(defaultPresets));
+    }
+
+    setApiKey(elevenLabsApiKey);
+    setSelectedVoiceId(currentVoiceId);
+    
+    const storedBrowserVoices = browserVoiceService.getStoredVoices();
+    setBrowserVoices(storedBrowserVoices);
+    
+    const currentBrowserVoice = browserVoiceService.getCurrentVoiceId();
+    setCurrentBrowserVoiceId(currentBrowserVoice);
+  }, [elevenLabsApiKey, currentVoiceId]);
+
+  const saveSettings = () => {
+    const config = {
       mistralUrl,
       stableDiffusionUrl,
       mistralModel,
       sdModel
-    });
+    };
     
-    toast.success('Connection settings saved successfully');
+    localStorage.setItem('local-ai-config', JSON.stringify(config));
+    onUpdate(config);
+    
+    if (onUpdateApiKey && apiKey !== elevenLabsApiKey) {
+      onUpdateApiKey(apiKey);
+    }
+    
+    if (onUpdateVoice && selectedVoiceId !== currentVoiceId) {
+      onUpdateVoice(selectedVoiceId);
+    }
+    
+    toast.success('Settings updated');
+    setIsOpen(false); // Close dialog after saving
   };
 
-  const handleApiKeySave = () => {
-    if (onUpdateApiKey) {
-      onUpdateApiKey(apiKey);
-      toast.success('API key saved successfully');
+  const handlePresetApply = (preset: any) => {
+    setMistralUrl(preset.mistralUrl);
+    setStableDiffusionUrl(preset.stableDiffusionUrl);
+    setMistralModel(preset.mistralModel);
+    setSdModel(preset.sdModel);
+    toast.success(`Applied "${preset.name}" preset`);
+  };
+
+  const saveAsPreset = () => {
+    if (!presetName.trim()) {
+      toast.error('Please enter a preset name');
+      return;
+    }
+    
+    const newPreset = {
+      name: presetName,
+      mistralUrl,
+      stableDiffusionUrl,
+      mistralModel,
+      sdModel
+    };
+    
+    const updatedPresets = [...presets, newPreset];
+    setPresets(updatedPresets);
+    localStorage.setItem('model-presets', JSON.stringify(updatedPresets));
+    setPresetName("");
+    toast.success(`Saved preset: ${presetName}`);
+  };
+
+  const handleExportChats = async () => {
+    try {
+      if (onExportChats) {
+        onExportChats();
+      } else if (sessions && sessions.length > 0) {
+        await exportChatsToFile(sessions);
+        toast.success('Conversations exported successfully');
+      } else {
+        toast.error('No conversations to export');
+      }
+    } catch (error) {
+      toast.error('Failed to export conversations');
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFiles(Array.from(e.target.files));
+  const handleImportChats = async () => {
+    try {
+      const confirmMerge = window.confirm(
+        "Would you like to add the imported conversations to your existing ones? " +
+        "Click 'OK' to add/merge, or 'Cancel' to replace all current conversations."
+      );
+      
+      const importResult = await importChatsFromFile(confirmMerge);
+      
+      if (onImportChats && importResult.sessions) {
+        onImportChats(importResult.sessions, importResult.merged);
+        toast.success(importResult.merged 
+          ? 'Conversations merged successfully' 
+          : 'Conversations imported successfully');
+      }
+    } catch (error) {
+      toast.error('Failed to import conversations');
+    }
+  };
+
+  const handleSetSaveLocation = () => {
+    setSaveLocation();
+  };
+
+  const handleVoiceFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const fileArray = Array.from(e.target.files);
+      setVoiceFiles(fileArray);
     }
   };
 
   const handleCloneVoice = async () => {
-    if (!onCloneVoice) return;
-    
-    if (!newVoiceName.trim()) {
-      toast.error('Please provide a name for your voice');
+    if (!newVoiceName) {
+      toast.error('Please enter a name for your voice');
       return;
     }
-    
-    if (files.length === 0) {
-      toast.error('Please upload at least one audio sample');
+
+    if (voiceFiles.length === 0) {
+      toast.error('Please select at least one audio file');
       return;
     }
-    
+
+    if (!onCloneVoice) {
+      toast.error('Voice cloning is not available');
+      return;
+    }
+
     setIsCloning(true);
     try {
-      const result = await onCloneVoice(newVoiceName, newVoiceDesc, files);
+      const result = await onCloneVoice(newVoiceName, newVoiceDescription, voiceFiles);
       if (result) {
-        toast.success(`Voice "${newVoiceName}" created successfully`);
         setNewVoiceName('');
-        setNewVoiceDesc('');
-        setFiles([]);
-      } else {
-        toast.error('Failed to create voice');
+        setNewVoiceDescription('');
+        setVoiceFiles([]);
       }
-    } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
     } finally {
       setIsCloning(false);
     }
@@ -130,375 +262,420 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
   const handleDeleteVoice = async (voiceId: string) => {
     if (!onDeleteVoice) return;
     
-    setIsDeleting(true);
-    try {
-      const success = await onDeleteVoice(voiceId);
-      if (success) {
-        toast.success('Voice deleted successfully');
-      } else {
-        toast.error('Failed to delete voice');
-      }
-    } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
-    } finally {
-      setIsDeleting(false);
+    if (window.confirm('Are you sure you want to delete this voice? This action cannot be undone.')) {
+      await onDeleteVoice(voiceId);
     }
   };
 
-  const handleRefreshVoices = async () => {
-    if (!onRefreshVoices) return;
-    
-    setIsRefreshing(true);
-    try {
+  const refreshVoices = async () => {
+    if (onRefreshVoices) {
+      toast.loading('Refreshing voices...');
       await onRefreshVoices();
-      toast.success('Voices refreshed successfully');
-    } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
-    } finally {
-      setIsRefreshing(false);
+      toast.success('Voices refreshed');
     }
   };
 
-  const handleExportChats = () => {
-    if (onExportChats) {
-      onExportChats();
+  const handleToggleBrowserVoice = (checked: boolean) => {
+    if (onToggleBrowserVoice) {
+      onToggleBrowserVoice(checked);
     }
   };
 
-  const handleImportChats = async () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    
-    input.onchange = async (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      if (target.files && target.files.length > 0) {
-        const file = target.files[0];
-        try {
-          const importedSessions = await importChatsFromFile(file);
-          if (onImportChats && importedSessions) {
-            onImportChats(importedSessions, false);
-            toast.success('Chats imported successfully');
-          }
-        } catch (error: any) {
-          toast.error(`Import failed: ${error.message}`);
-        }
-      }
-    };
-    
-    input.click();
+  const handleSelectBrowserVoice = (voiceId: string) => {
+    browserVoiceService.setCurrentVoiceId(voiceId);
+    setCurrentBrowserVoiceId(voiceId);
+    toast.success('Browser voice updated');
   };
 
-  const handleSetSaveLocation = async () => {
-    try {
-      await setSaveLocation();
-      toast.success('Save location set successfully');
-    } catch (error: any) {
-      toast.error(`Failed to set save location: ${error.message}`);
-    }
+  const refreshBrowserVoices = () => {
+    const voices = browserVoiceService.getStoredVoices();
+    setBrowserVoices(voices);
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Settings className="h-5 w-5" />
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative rounded-full h-8 w-8"
+          title="Configure AI model connections"
+          onClick={() => setIsOpen(true)}
+        >
+          <Settings className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[625px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
-            Configure your connections, voice settings, and manage your data
+            Configure model connections and manage your conversations
           </DialogDescription>
         </DialogHeader>
-
-        <Tabs value={tabValue} onValueChange={setTabValue} className="mt-4">
-          <TabsList className="grid grid-cols-3 mb-4">
-            <TabsTrigger value="connections">Connections</TabsTrigger>
+        
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="text">Text AI</TabsTrigger>
+            <TabsTrigger value="image">Image AI</TabsTrigger>
             <TabsTrigger value="voice">Voice</TabsTrigger>
-            <TabsTrigger value="data">Data Management</TabsTrigger>
+            <TabsTrigger value="myvoice">My Voice</TabsTrigger>
+            <TabsTrigger value="data">Data</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="connections" className="space-y-4">
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="mistralUrl">Mistral API URL</Label>
-                <Input
-                  id="mistralUrl"
-                  value={mistralUrl}
-                  onChange={(e) => setMistralUrl(e.target.value)}
-                  placeholder="http://localhost:11434"
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="mistralModel">Mistral Model</Label>
-                <Select value={mistralModel} onValueChange={setMistralModel}>
-                  <SelectTrigger id="mistralModel" className="mt-1">
-                    <SelectValue placeholder="Select model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="mistral">Mistral</SelectItem>
-                    <SelectItem value="mixtral">Mixtral</SelectItem>
-                    <SelectItem value="llama3">Llama 3</SelectItem>
-                    <SelectItem value="codellama">Code Llama</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="sdUrl">Stable Diffusion API URL</Label>
-                <Input
-                  id="sdUrl"
-                  value={stableDiffusionUrl}
-                  onChange={(e) => setStableDiffusionUrl(e.target.value)}
-                  placeholder="http://localhost:7860"
-                  className="mt-1"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="sdModel">Stable Diffusion Model</Label>
-                <Select value={sdModel} onValueChange={setSdModel}>
-                  <SelectTrigger id="sdModel" className="mt-1">
-                    <SelectValue placeholder="Select model" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="sdxl">SDXL</SelectItem>
-                    <SelectItem value="sd15">SD 1.5</SelectItem>
-                    <SelectItem value="sd2">SD 2</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <Button className="w-full" onClick={handleSave}>
-                <Save className="mr-2 h-4 w-4" />
-                Save Connection Settings
-              </Button>
-              
-              <ConnectionTester />
+          <TabsContent value="text" className="pt-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="mistral-url">Text AI API URL</Label>
+              <Input
+                id="mistral-url"
+                value={mistralUrl}
+                onChange={(e) => setMistralUrl(e.target.value)}
+                placeholder="http://localhost:11434/v1/chat/completions"
+              />
+              <p className="text-xs text-muted-foreground">
+                The API endpoint for your local text AI model (Mistral, Llama, etc.)
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="mistral-model">Text Model Name</Label>
+              <Input
+                id="mistral-model"
+                value={mistralModel}
+                onChange={(e) => setMistralModel(e.target.value)}
+                placeholder="mistral-7b"
+              />
+              <p className="text-xs text-muted-foreground">
+                The model identifier for your text AI (e.g., mistral-7b, llama3, vicuna)
+              </p>
             </div>
           </TabsContent>
           
-          <TabsContent value="voice" className="space-y-4">
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label htmlFor="browser-voice" className="font-medium">Use Browser Voice</Label>
-                  <Switch 
-                    id="browser-voice" 
-                    checked={useBrowserVoice} 
-                    onCheckedChange={onToggleBrowserVoice}
-                  />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Use your browser's built-in text-to-speech capabilities instead of ElevenLabs
-                </p>
-              </div>
-              
-              {!useBrowserVoice && (
-                <>
-                  <div className="space-y-1">
-                    <Label htmlFor="eleven-labs-key">ElevenLabs API Key</Label>
+          <TabsContent value="image" className="pt-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="sd-url">Image AI API URL</Label>
+              <Input
+                id="sd-url"
+                value={stableDiffusionUrl}
+                onChange={(e) => setStableDiffusionUrl(e.target.value)}
+                placeholder="http://localhost:7860/sdapi/v1/txt2img"
+              />
+              <p className="text-xs text-muted-foreground">
+                The API endpoint for your image generation model (Stable Diffusion, etc.)
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="sd-model">Image Model Name</Label>
+              <Input
+                id="sd-model"
+                value={sdModel}
+                onChange={(e) => setSdModel(e.target.value)}
+                placeholder="stable-diffusion-v1-5"
+              />
+              <p className="text-xs text-muted-foreground">
+                The model name for your image generation AI
+              </p>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="voice" className="pt-4 space-y-4">
+            <div className="flex items-center space-x-2 pb-2">
+              <Switch 
+                id="use-browser-voice" 
+                checked={useBrowserVoice} 
+                onCheckedChange={handleToggleBrowserVoice}
+              />
+              <Label htmlFor="use-browser-voice">
+                Use my recorded voice (free) instead of ElevenLabs
+              </Label>
+            </div>
+
+            {!useBrowserVoice && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="elevenlabs-api-key">ElevenLabs API Key</Label>
+                  <div className="flex gap-2">
                     <Input
-                      id="eleven-labs-key"
+                      id="elevenlabs-api-key"
                       type="password"
                       value={apiKey}
                       onChange={(e) => setApiKey(e.target.value)}
                       placeholder="Enter your ElevenLabs API key"
                     />
-                    <Button className="mt-2" onClick={handleApiKeySave} size="sm">
-                      <KeyRound className="mr-2 h-4 w-4" />
-                      Save API Key
+                    <Button 
+                      variant="outline" 
+                      size="icon" 
+                      onClick={() => window.open('https://elevenlabs.io/app/account-settings', '_blank')}
+                      title="Get an API key"
+                    >
+                      <KeyRound className="h-4 w-4" />
                     </Button>
                   </div>
-                  
-                  {availableVoices && availableVoices.length > 0 && (
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <Label>Select Voice</Label>
-                        <Button size="sm" variant="outline" onClick={handleRefreshVoices} disabled={isRefreshing}>
-                          {isRefreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                          <span className="ml-2">{isRefreshing ? 'Refreshing...' : 'Refresh'}</span>
-                        </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Your ElevenLabs API key is required for voice synthesis and voice cloning
+                  </p>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="voice-select">Voice</Label>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={refreshVoices}
+                      disabled={!apiKey}
+                      className="h-6 px-2"
+                    >
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Refresh
+                    </Button>
+                  </div>
+                  <Select 
+                    value={selectedVoiceId} 
+                    onValueChange={setSelectedVoiceId}
+                    disabled={!apiKey || availableVoices.length === 0}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a voice" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div className="max-h-[200px] overflow-y-auto">
+                        {availableVoices.map((voice) => (
+                          <SelectItem key={voice.voice_id} value={voice.voice_id}>
+                            {voice.name} {voice.isCustom ? '(Custom)' : ''}
+                          </SelectItem>
+                        ))}
                       </div>
-                      <Select value={currentVoiceId} onValueChange={onUpdateVoice}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select voice" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableVoices.map((voice) => (
-                            <SelectItem key={voice.voice_id} value={voice.voice_id}>
-                              {voice.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      
-                      {availableVoices.map((voice) => (
-                        voice.voice_id === currentVoiceId && (
-                          <div key={`info-${voice.voice_id}`} className="p-4 border rounded-md">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <h3 className="font-medium">{voice.name}</h3>
-                                {voice.description && (
-                                  <p className="text-sm text-muted-foreground">{voice.description}</p>
-                                )}
-                              </div>
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => handleDeleteVoice(voice.voice_id)}
-                                disabled={isDeleting}
-                              >
-                                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                              </Button>
-                            </div>
-                          </div>
-                        )
-                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select a voice for text-to-speech synthesis
+                  </p>
+                </div>
+
+                <div className="border rounded-md p-3 mt-4">
+                  <h3 className="text-sm font-medium mb-2">Clone Your Voice</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <Label htmlFor="new-voice-name">Voice Name</Label>
+                      <Input
+                        id="new-voice-name"
+                        value={newVoiceName}
+                        onChange={(e) => setNewVoiceName(e.target.value)}
+                        placeholder="My Voice"
+                        disabled={!apiKey || isCloning}
+                      />
                     </div>
-                  )}
-                  
-                  <div className="border-t pt-4">
-                    <h3 className="font-medium mb-2">Clone New Voice</h3>
-                    <div className="space-y-3">
-                      <div>
-                        <Label htmlFor="voice-name">Voice Name</Label>
-                        <Input
-                          id="voice-name"
-                          value={newVoiceName}
-                          onChange={(e) => setNewVoiceName(e.target.value)}
-                          placeholder="My Custom Voice"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="voice-desc">Voice Description (optional)</Label>
-                        <Input
-                          id="voice-desc"
-                          value={newVoiceDesc}
-                          onChange={(e) => setNewVoiceDesc(e.target.value)}
-                          placeholder="Description of your custom voice"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="voice-samples">Audio Samples (MP3, WAV, M4A)</Label>
-                        <Input
-                          id="voice-samples"
-                          type="file"
-                          onChange={handleFileChange}
-                          multiple
-                          accept=".mp3,.wav,.m4a"
-                          className="mt-1"
-                        />
-                        {files.length > 0 && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {files.length} file(s) selected
-                          </p>
-                        )}
-                      </div>
-                      <Button 
-                        onClick={handleCloneVoice} 
-                        disabled={isCloning || !newVoiceName || files.length === 0}
+                    <div>
+                      <Label htmlFor="new-voice-description">Description (optional)</Label>
+                      <Input
+                        id="new-voice-description"
+                        value={newVoiceDescription}
+                        onChange={(e) => setNewVoiceDescription(e.target.value)}
+                        placeholder="Description of this voice"
+                        disabled={!apiKey || isCloning}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="voice-samples">Voice Samples</Label>
+                      <Input
+                        id="voice-samples"
+                        type="file"
+                        accept=".mp3,.wav,.m4a"
+                        onChange={handleVoiceFileChange}
+                        multiple
+                        disabled={!apiKey || isCloning}
+                        className="cursor-pointer"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Upload 1-10 high-quality audio samples (MP3, WAV, M4A)
+                      </p>
+                    </div>
+                    <div className="flex justify-center">
+                      <Button
+                        onClick={handleCloneVoice}
+                        disabled={!apiKey || !newVoiceName || voiceFiles.length === 0 || isCloning}
                         className="w-full"
                       >
-                        {isCloning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                        {isCloning ? 'Creating Voice...' : 'Create Voice'}
+                        <PlusCircle className="h-4 w-4 mr-2" />
+                        Clone Voice
                       </Button>
                     </div>
                   </div>
-                  
-                  <div className="border-t pt-4">
-                    <h3 className="font-medium mb-2">Test Voice</h3>
-                    <VoiceRecorder onVoiceCreated={() => {
-                      if (onRefreshVoices) {
-                        onRefreshVoices();
-                      }
-                    }} />
-                  </div>
-                </>
-              )}
-              
-              {useBrowserVoice && (
-                <div className="border-t pt-4">
-                  <h3 className="font-medium mb-2">Browser Voice Settings</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <Label htmlFor="browser-voice-select">Select Voice</Label>
-                      <Select
-                        value={browserVoiceService.getCurrentVoiceId()}
-                        onValueChange={(val) => {
-                          browserVoiceService.setCurrentVoiceId(val);
-                        }}
-                      >
-                        <SelectTrigger id="browser-voice-select" className="mt-1">
-                          <SelectValue placeholder="Select voice" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {browserVoiceService.getStoredVoices().map((voice) => (
-                            <SelectItem key={voice.id} value={voice.id}>
-                              {voice.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label>Browser Speech Synthesis Voices</Label>
-                      <div className="max-h-[150px] overflow-y-auto border rounded-md p-2 mt-1">
-                        {window.speechSynthesis && window.speechSynthesis.getVoices().map((voice, index) => (
-                          <div key={index} className="text-sm p-1 hover:bg-muted/50 rounded cursor-pointer" onClick={() => {
-                            const utterance = new SpeechSynthesisUtterance("Test");
-                            utterance.voice = voice;
-                            window.speechSynthesis.speak(utterance);
-                          }}>
-                            {voice.name} ({voice.lang})
+                </div>
+
+                {availableVoices.some(voice => voice.isCustom) && (
+                  <div className="border rounded-md p-3">
+                    <h3 className="text-sm font-medium mb-2">Your Custom Voices</h3>
+                    <div className="space-y-2 max-h-[150px] overflow-y-auto">
+                      {availableVoices
+                        .filter(voice => voice.isCustom)
+                        .map(voice => (
+                          <div key={voice.voice_id} className="flex justify-between items-center p-2 bg-muted/50 rounded-md">
+                            <div>
+                              <div className="font-medium">{voice.name}</div>
+                              {voice.description && (
+                                <div className="text-xs text-muted-foreground">{voice.description}</div>
+                              )}
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleDeleteVoice(voice.voice_id)}
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         ))}
-                      </div>
                     </div>
-                    
-                    <Button onClick={() => {
-                      const utterance = new SpeechSynthesisUtterance("This is a test of the browser text-to-speech functionality");
-                      window.speechSynthesis.speak(utterance);
-                    }}>
-                      Test Voice
-                    </Button>
                   </div>
-                </div>
-              )}
+                )}
+              </>
+            )}
+
+            {useBrowserVoice && (
+              <div className="p-4 border rounded-md bg-muted/30">
+                <p className="text-sm">
+                  You're using your own voice recordings instead of ElevenLabs. 
+                  Go to the "My Voice" tab to record and manage your voice samples.
+                </p>
+              </div>
+            )}
+          </TabsContent>
+          
+          <TabsContent value="myvoice" className="pt-4 space-y-4">
+            <div className="border rounded-md p-3">
+              <VoiceRecorder onVoiceCreated={refreshBrowserVoices} />
+            </div>
+            
+            {browserVoices.length > 0 && (
+              <div className="space-y-2">
+                <Label htmlFor="browser-voice-select">Select Your Voice</Label>
+                <Select 
+                  value={currentBrowserVoiceId} 
+                  onValueChange={handleSelectBrowserVoice}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a voice" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {browserVoices.map((voice) => (
+                      <SelectItem key={voice.id} value={voice.id}>
+                        {voice.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Select which of your recorded voices to use for speech
+                </p>
+              </div>
+            )}
+            
+            <div className="bg-muted/30 p-3 rounded-md">
+              <h3 className="text-sm font-medium">Tips for better recordings:</h3>
+              <ul className="text-xs text-muted-foreground mt-2 space-y-1 list-disc pl-4">
+                <li>Use a good microphone in a quiet environment</li>
+                <li>Speak clearly at a consistent pace</li>
+                <li>Record a few seconds of sample speech</li>
+                <li>Try recording different phrases for better variety</li>
+              </ul>
             </div>
           </TabsContent>
           
-          <TabsContent value="data" className="space-y-4">
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <h3 className="font-medium">Export & Import</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button onClick={handleExportChats} disabled={!sessions || sessions.length === 0} className="w-full">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export Chats
-                  </Button>
-                  <Button onClick={handleImportChats} className="w-full">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Import Chats
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="font-medium">Storage Location</h3>
-                <Button onClick={handleSetSaveLocation} className="w-full">
-                  <HardDrive className="mr-2 h-4 w-4" />
-                  Set Save Location
+          <TabsContent value="data" className="pt-4 space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-sm font-medium">Conversation Data</h3>
+              <div className="flex flex-col gap-2">
+                <Button 
+                  variant="outline" 
+                  className="w-full flex justify-between items-center" 
+                  onClick={handleExportChats}
+                >
+                  <span>Export Conversations</span>
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full flex justify-between items-center" 
+                  onClick={handleImportChats}
+                >
+                  <span>Import Conversations</span>
+                  <Upload className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="w-full flex justify-between items-center" 
+                  onClick={handleSetSaveLocation}
+                >
+                  <span>Set Save Location</span>
+                  <HardDrive className="h-4 w-4" />
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Export or import your conversation history as JSON files
+              </p>
             </div>
           </TabsContent>
         </Tabs>
+        
+        <div className="pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="preset-select">Model Presets</Label>
+            <Select onValueChange={(value) => {
+              const preset = presets.find(p => p.name === value);
+              if (preset) handlePresetApply(preset);
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a preset configuration" />
+              </SelectTrigger>
+              <SelectContent>
+                {presets.map((preset, index) => (
+                  <SelectItem key={index} value={preset.name}>{preset.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex items-center gap-2 mt-4">
+            <Input
+              placeholder="New preset name"
+              value={presetName}
+              onChange={(e) => setPresetName(e.target.value)}
+            />
+            <Button variant="outline" size="sm" onClick={saveAsPreset}>
+              <Save className="h-4 w-4 mr-1" />
+              Save
+            </Button>
+          </div>
+        </div>
+        
+        <div className="pt-4">
+          {activeTab === 'voice' ? (
+            <p className="text-xs text-amber-500">
+              Note: Voice cloning requires clean audio samples of a single speaker.
+            </p>
+          ) : (
+            <p className="text-xs text-amber-500">
+              Note: Ensure your local models are running before connecting.
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground mt-2">
+            {activeTab === 'voice' ? (
+              <>For best results, provide 1-2 minute samples with no background noise.</>
+            ) : (
+              <>
+                For text models: Use llama.cpp, Ollama, or LM Studio<br/>
+                For image models: Use ComfyUI or AUTOMATIC1111
+              </>
+            )}
+          </p>
+        </div>
+        
+        <div className="flex justify-end pt-4">
+          <Button onClick={saveSettings}>Save Settings</Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -4,7 +4,7 @@ export interface Module {
   name: string;
   description: string;
   price: number;
-  category: 'business' | 'personal' | 'creative' | 'productivity' | 'music';
+  category: 'business' | 'personal' | 'creative' | 'productivity';
   featuredImage: string;
   rating: number;
   sales: number;

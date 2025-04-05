@@ -33,47 +33,44 @@ export function exportChatsToFile(sessions: ChatSession[], filename = "agent-elo
 
 /**
  * Import chat sessions from a local JSON file
+ * @param mergeWithExisting Whether to merge with existing chats or replace them
  */
-export async function importChatsFromFile(file: File): Promise<ChatSession[]> {
+export function importChatsFromFile(mergeWithExisting = false): Promise<{sessions: ChatSession[], merged: boolean}> {
   return new Promise((resolve, reject) => {
     try {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const content = event.target?.result as string;
-          const parsedContent = JSON.parse(content);
-          
-          // Add type guard to ensure we have a valid ChatSession array
-          if (Array.isArray(parsedContent) && 
-              parsedContent.every(item => isChatSession(item))) {
-            resolve(parsedContent as ChatSession[]);
-          } else {
-            reject(new Error("Invalid chat session format"));
-          }
-        } catch (err) {
-          reject(new Error("Invalid JSON file"));
+      // Create file input element
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".json";
+      
+      input.onchange = (e: Event) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (!file) {
+          reject(new Error("No file selected"));
+          return;
         }
+        
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const content = event.target?.result as string;
+            const sessions = JSON.parse(content) as ChatSession[];
+            resolve({ sessions, merged: mergeWithExisting });
+          } catch (err) {
+            reject(new Error("Invalid JSON file"));
+          }
+        };
+        
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsText(file);
       };
       
-      reader.onerror = () => reject(new Error("Failed to read file"));
-      reader.readAsText(file);
+      // Trigger file selection dialog
+      input.click();
     } catch (error) {
       reject(error);
     }
   });
-}
-
-/**
- * Type guard to check if an object is a valid ChatSession
- */
-function isChatSession(item: any): item is ChatSession {
-  return item && 
-         typeof item === 'object' && 
-         'id' in item &&
-         'title' in item &&
-         'messages' in item &&
-         'createdAt' in item &&
-         'updatedAt' in item;
 }
 
 /**
