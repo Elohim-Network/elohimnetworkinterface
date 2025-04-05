@@ -34,7 +34,7 @@ export function exportChatsToFile(sessions: ChatSession[], filename = "agent-elo
 /**
  * Import chat sessions from a local JSON file
  */
-export async function importChatsFromFile(file: File): Promise<{sessions: ChatSession[], merged: boolean} | ChatSession[]> {
+export async function importChatsFromFile(file: File): Promise<ChatSession[]> {
   return new Promise((resolve, reject) => {
     try {
       const reader = new FileReader();
