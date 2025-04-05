@@ -1,11 +1,17 @@
 
-// Local AI Service - Communicates with locally running AI models
-// This service handles connections to various local LLMs and Stable Diffusion
+// Local AI Service - Communicates with locally running AI models or cloud-based APIs like Mistral
+// This service handles connections to various LLMs and Stable Diffusion
+// The official Mistral AI API endpoint with the correct domain
+const MISTRAL_API_URL = "https://agentelohim.com/v1/chat/completions";
+
+// Define a consistent type for backend providers that includes 'api-generate'
+type ProviderType = 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'api-generate' | 'unknown';
 
 interface MistralCompletionRequest {
-  prompt: string;
-  max_tokens?: number;
+  model: string;
+  messages: Array<{ role: string; content: string }>;
   temperature?: number;
+  max_tokens?: number;
   top_p?: number;
   stop?: string[];
 }
@@ -30,12 +36,13 @@ const getConfig = () => {
     }
   }
   
-  // Default configuration with the updated URLs
+  // Default configuration with the updated URL
   return {
-    mistralUrl: 'http://localhost:11434/v1/chat/completions',
+    mistralUrl: MISTRAL_API_URL,
     stableDiffusionUrl: 'http://127.0.0.1:8188',
-    mistralModel: 'mistral-7b',
-    sdModel: 'stable-diffusion-v1-5'
+    mistralModel: 'mistral-7b-instruct',
+    sdModel: 'stable-diffusion-v1-5',
+    mistralApiKey: '' // Store API key in config
   };
 };
 
@@ -43,13 +50,17 @@ const getConfig = () => {
  * Detect which LLM backend is being used based on URL
  * This helps format requests correctly for different APIs
  */
-const detectLlmBackend = (url: string): 'openai-compatible' | 'ollama' | 'lmstudio' | 'unknown' => {
+const detectLlmBackend = (url: string): ProviderType => {
   const lowerUrl = url.toLowerCase();
   
-  if (lowerUrl.includes('ollama')) {
+  if (lowerUrl.includes('mistral.ai') || lowerUrl.includes('agentelohim.com')) {
+    return 'mistral-cloud';
+  } else if (lowerUrl.includes('ollama')) {
     return 'ollama';
   } else if (lowerUrl.includes('lmstudio')) {
     return 'lmstudio';
+  } else if (lowerUrl.includes('/api/generate')) {
+    return 'api-generate';
   } else if (lowerUrl.includes('/v1/') || lowerUrl.includes('/chat/completions')) {
     return 'openai-compatible';
   }
@@ -62,20 +73,18 @@ const detectLlmBackend = (url: string): 'openai-compatible' | 'ollama' | 'lmstud
  */
 const formatMessages = (
   messages: { role: string; content: string }[], 
-  backend: 'openai-compatible' | 'ollama' | 'lmstudio' | 'unknown'
+  backend: ProviderType
 ) => {
-  switch (backend) {
-    case 'openai-compatible':
-      return messages;
-    case 'ollama':
-      // Ollama expects messages in OpenAI format but might have specific formatting
-      return messages;
-    case 'lmstudio':
-      // LM Studio follows OpenAI format
-      return messages;
-    default:
-      return messages;
+  // For most APIs, we use the standard message format
+  if (backend === 'api-generate') {
+    // Special case for /api/generate endpoint which may have a different format
+    // Extract just the last user message content for simple API endpoints
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    return lastUserMessage ? lastUserMessage.content : messages[messages.length - 1].content;
   }
+  
+  // For all other backends, return the full messages array
+  return messages;
 };
 
 export async function generateTextWithMistral(
@@ -84,19 +93,32 @@ export async function generateTextWithMistral(
 ): Promise<string> {
   const config = getConfig();
   const apiUrl = localApiUrl || config.mistralUrl;
-  const modelName = config.mistralModel || 'mistral-7b';
+  const modelName = config.mistralModel || 'mistral-7b-instruct';
+  const apiKey = config.mistralApiKey || '';
   
   try {
     console.log(`Generating text with ${modelName} at ${apiUrl}`);
     
     // Detect which backend we're working with
     const backend = detectLlmBackend(apiUrl);
+    console.log(`Detected backend: ${backend}`);
+    
+    // Format messages according to the backend API requirements
     const formattedMessages = formatMessages(messages, backend);
     
     // Build request body according to the detected backend
     let requestBody: any = {};
+    let headers: HeadersInit = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Add API key for Mistral Cloud if available
+    if (backend === 'mistral-cloud' && apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
     
     switch (backend) {
+      case 'mistral-cloud':
       case 'openai-compatible':
         requestBody = {
           model: modelName,
@@ -115,45 +137,71 @@ export async function generateTextWithMistral(
           }
         };
         break;
+      case 'api-generate':
+        // Special case for simple API endpoints that just take text input
+        requestBody = {
+          prompt: formattedMessages,
+        };
+        break;
       case 'lmstudio':
       case 'unknown':
       default:
         requestBody = {
           model: modelName,
-          messages: formattedMessages,
+          messages: Array.isArray(formattedMessages) ? formattedMessages : [{ role: 'user', content: String(formattedMessages) }],
           temperature: 0.7,
           max_tokens: 800,
         };
         break;
     }
     
+    console.log('Sending request with body:', JSON.stringify(requestBody).substring(0, 200) + '...');
+    
     // Send the request
     const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify(requestBody),
     });
 
+    console.log('Response status:', response.status);
+    
     if (!response.ok) {
       const errorData = await response.text();
       console.error('LLM API error:', errorData);
+      
+      // If we get an error with the current backend, try falling back to the API generate endpoint
+      // but only if we're not already using it
+      if (backend !== 'api-generate') {
+        console.log('Attempting fallback to /api/generate endpoint');
+        return generateTextWithMistral(messages, 'https://agentelohim.com/api/generate');
+      }
+      
       throw new Error(`Failed to generate text: ${errorData}`);
     }
 
     // Parse the response
     const data = await response.json();
+    console.log('Response data:', JSON.stringify(data).substring(0, 200) + '...');
     
     // Extract the generated text based on the detected backend
     let generatedText = '';
     
     switch (backend) {
+      case 'mistral-cloud':
       case 'openai-compatible':
         generatedText = data.choices[0]?.message?.content || 'No response generated';
         break;
       case 'ollama':
         generatedText = data.message?.content || data.response || 'No response generated';
+        break;
+      case 'api-generate':
+        // Simple API might just return the text directly or in a response field
+        generatedText = data.response || data.generated_text || data.text || data.content || data;
+        if (typeof generatedText === 'object') {
+          // Handle case where the response is an object
+          generatedText = JSON.stringify(generatedText);
+        }
         break;
       case 'lmstudio':
         generatedText = data.choices[0]?.message?.content || 'No response generated';
@@ -166,10 +214,11 @@ export async function generateTextWithMistral(
         break;
     }
     
+    console.log('Generated text:', generatedText.substring(0, 200) + '...');
     return generatedText;
   } catch (error) {
-    console.error('Error generating text with local LLM:', error);
-    return `Error: Could not connect to local LLM model. Please ensure your local server is running at ${apiUrl}`;
+    console.error('Error generating text with LLM:', error);
+    return `Error: Could not connect to AI model. Please ensure the API endpoint is correct and accessible: ${apiUrl}`;
   }
 }
 
