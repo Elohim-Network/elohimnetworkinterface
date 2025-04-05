@@ -210,7 +210,7 @@ export async function generateTextWithMistral(
       console.error(`LLM API error (${errorStatus}):`, errorData);
       
       // If we get a 404 or other error and we're not using the /api/generate endpoint,
-      // try falling back to it
+      // try falling back to it - BUT ONLY if the backend is NOT already api-generate
       if (backend !== 'api-generate' && !apiUrl.includes('/api/generate')) {
         console.log("Trying fallback to /api/generate endpoint");
         // Construct fallback URL by replacing the endpoint or adding it
