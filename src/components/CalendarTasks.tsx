@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -12,6 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Clock, CalendarIcon, Plus, X, Check, Calendar as CalendarIcon2 } from 'lucide-react';
 
+// Task and Event type definitions
 interface Task {
   id: string;
   title: string;
@@ -60,7 +62,7 @@ const CalendarTasks: React.FC = () => {
   const [activeView, setActiveView] = useState<'calendar' | 'tasks'>('tasks');
   const [taskFilter, setTaskFilter] = useState<'all' | 'completed' | 'pending'>('all');
   
-  const { register, handleSubmit, reset, setValue, getValues, formState: { errors } } = useForm<TaskFormValues & EventFormValues>({
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<TaskFormValues & EventFormValues>({
     defaultValues: {
       taskTitle: "",
       taskDescription: "",
@@ -440,7 +442,8 @@ const CalendarTasks: React.FC = () => {
                   </label>
                   <Select 
                     onValueChange={(value: 'low' | 'medium' | 'high') => {
-                      setValue('taskPriority', value);
+                      // Explicitly cast to the correct type
+                      reset({ ...register().getValues(), taskPriority: value });
                     }}
                     defaultValue="medium"
                   >
