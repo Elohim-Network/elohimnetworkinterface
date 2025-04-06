@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ShoppingCart } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import LeadsManagement from './LeadsManagement';
 import WebScraper from './WebScraper';
 import EmailCampaign from './EmailCampaign';
@@ -14,8 +16,14 @@ const BusinessTools: React.FC = () => {
   
   return (
     <div className="h-full flex flex-col">
-      <div className="border-b py-2 px-4">
+      <div className="border-b py-2 px-4 flex justify-between items-center">
         <h1 className="text-xl font-bold">Elohim Business Tools</h1>
+        <Link to="/marketplace">
+          <Button variant="outline" size="sm" className="flex items-center gap-2">
+            <ShoppingCart className="h-4 w-4" />
+            <span>Module Marketplace</span>
+          </Button>
+        </Link>
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">

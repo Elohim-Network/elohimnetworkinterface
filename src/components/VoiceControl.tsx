@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, Volume2, VolumeX, Headphones, Glasses } from 'lucide-react';
+import { Mic, Volume2, VolumeX, Headphones, Glasses, UserCircle2, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
@@ -14,6 +14,7 @@ interface VoiceControlProps {
   toggleVoiceEnabled: () => void;
   toggleHandsFreeMode: () => void;
   stopSpeaking: () => void;
+  showAvatar?: () => void;
 }
 
 const VoiceControl: React.FC<VoiceControlProps> = ({
@@ -24,7 +25,8 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
   toggleListening,
   toggleVoiceEnabled,
   toggleHandsFreeMode,
-  stopSpeaking
+  stopSpeaking,
+  showAvatar
 }) => {
   const checkMicPermission = async () => {
     try {
@@ -63,11 +65,18 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
       <Button
         variant={handsFreeMode ? "destructive" : "ghost"}
         size="icon"
-        className="rounded-full h-7 w-7"
+        className={cn(
+          "rounded-full h-7 w-7",
+          handsFreeMode && "animate-pulse-subtle"
+        )}
         onClick={toggleHandsFreeMode}
-        title={handsFreeMode ? "Disable hands-free mode" : "Enable hands-free mode"}
+        title={handsFreeMode ? "Switch to text input" : "Enable hands-free voice mode"}
       >
-        <Glasses className="h-3.5 w-3.5" />
+        {handsFreeMode ? (
+          <MessageSquare className="h-3.5 w-3.5" />
+        ) : (
+          <Glasses className="h-3.5 w-3.5" />
+        )}
       </Button>
       
       <Button
@@ -93,6 +102,18 @@ const VoiceControl: React.FC<VoiceControlProps> = ({
           <Volume2 className="h-3.5 w-3.5" />
         )}
       </Button>
+
+      {showAvatar && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full h-7 w-7"
+          onClick={showAvatar}
+          title="Show Agent Elohim"
+        >
+          <UserCircle2 className="h-3.5 w-3.5" />
+        </Button>
+      )}
     </div>
   );
 };

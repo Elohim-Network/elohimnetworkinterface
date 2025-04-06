@@ -1,6 +1,7 @@
 
 // Local AI Service - Communicates with locally running AI models or cloud-based APIs like Mistral
 // This service handles connections to various LLMs and Stable Diffusion
+
 // The official Mistral AI API endpoint with the correct domain
 const MISTRAL_API_URL = "https://agentelohim.com/v1/chat/completions";
 
@@ -103,23 +104,62 @@ export async function generateTextWithMistral(
     const backend = detectLlmBackend(apiUrl);
     console.log(`Detected backend: ${backend}`);
     
-    // Format messages according to the backend API requirements
-    const formattedMessages = formatMessages(messages, backend);
+    // Special case for /api/generate endpoint which uses a different format
+    if (backend === 'api-generate') {
+      const lastMessageContent = formatMessages(messages, backend) as string;
+      console.log("Using /api/generate endpoint format with content:", lastMessageContent);
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt: lastMessageContent,
+          model: modelName,
+          temperature: 0.7,
+          max_tokens: 800,
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorStatus = response.status;
+        const errorData = await response.text();
+        throw new Error(`Failed to generate text: ${errorData} (Status: ${errorStatus})`);
+      }
+      
+      const data = await response.json();
+      return data.response || data.text || data.generated_text || 'No response generated';
+    }
+    
+    // Standard handling for other API formats
+    const formattedMessages = formatMessages(messages, backend) as Array<{ role: string; content: string }>;
     
     // Build request body according to the detected backend
     let requestBody: any = {};
-    let headers: HeadersInit = {
+    let headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
     
-    // Add API key for Mistral Cloud if available
-    if (backend === 'mistral-cloud' && apiKey) {
-      headers['Authorization'] = `Bearer ${apiKey}`;
-    }
-    
     switch (backend) {
       case 'mistral-cloud':
+        // Mistral Cloud API requires an API key
+        if (!apiKey) {
+          return "Error: Mistral Cloud API requires an API key. Please add your API key in the settings.";
+        }
+        headers['Authorization'] = `Bearer ${apiKey}`;
+        requestBody = {
+          model: modelName,
+          messages: formattedMessages,
+          temperature: 0.7,
+          max_tokens: 800,
+        };
+        break;
       case 'openai-compatible':
+        // Add API key if available
+        if (apiKey) {
+          headers['Authorization'] = `Bearer ${apiKey}`;
+        }
         requestBody = {
           model: modelName,
           messages: formattedMessages,
@@ -137,52 +177,60 @@ export async function generateTextWithMistral(
           }
         };
         break;
-      case 'api-generate':
-        // Special case for simple API endpoints that just take text input
-        requestBody = {
-          prompt: formattedMessages,
-        };
-        break;
       case 'lmstudio':
       case 'unknown':
       default:
         requestBody = {
           model: modelName,
-          messages: Array.isArray(formattedMessages) ? formattedMessages : [{ role: 'user', content: String(formattedMessages) }],
+          messages: formattedMessages,
           temperature: 0.7,
           max_tokens: 800,
         };
         break;
     }
     
-    console.log('Sending request with body:', JSON.stringify(requestBody).substring(0, 200) + '...');
-    
     // Send the request
+    console.log(`Sending request to ${apiUrl} with headers:`, headers);
+    console.log("Request body:", JSON.stringify(requestBody));
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers,
       body: JSON.stringify(requestBody),
     });
 
-    console.log('Response status:', response.status);
-    
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('LLM API error:', errorData);
+      const errorStatus = response.status;
+      let errorData;
+      try {
+        errorData = await response.text();
+      } catch (e) {
+        errorData = "Could not parse error response";
+      }
+      console.error(`LLM API error (${errorStatus}):`, errorData);
       
-      // If we get an error with the current backend, try falling back to the API generate endpoint
-      // but only if we're not already using it
-      if (backend !== 'api-generate') {
-        console.log('Attempting fallback to /api/generate endpoint');
-        return generateTextWithMistral(messages, 'https://agentelohim.com/api/generate');
+      // If we get a 404 or other error and we're not using the /api/generate endpoint,
+      // try falling back to it - BUT ONLY if the backend is NOT already api-generate
+      if (backend !== 'api-generate' && !apiUrl.includes('/api/generate')) {
+        console.log("Trying fallback to /api/generate endpoint");
+        // Construct fallback URL by replacing the endpoint or adding it
+        const fallbackUrl = apiUrl.includes('/v1') 
+          ? apiUrl.replace(/\/v1\/.*$/, '/api/generate') 
+          : `${apiUrl}/api/generate`.replace(/\/\//g, '/');
+        
+        console.log(`Fallback URL: ${fallbackUrl}`);
+        return generateTextWithMistral(messages, fallbackUrl);
       }
       
-      throw new Error(`Failed to generate text: ${errorData}`);
+      if (errorStatus === 403) {
+        return `Error: Access forbidden (403). This could be due to an invalid API key, insufficient permissions, or request restrictions. Please check your API key in settings.`;
+      }
+      throw new Error(`Failed to generate text: ${errorData} (Status: ${errorStatus})`);
     }
 
     // Parse the response
     const data = await response.json();
-    console.log('Response data:', JSON.stringify(data).substring(0, 200) + '...');
+    console.log("API response data:", data);
     
     // Extract the generated text based on the detected backend
     let generatedText = '';
@@ -190,35 +238,27 @@ export async function generateTextWithMistral(
     switch (backend) {
       case 'mistral-cloud':
       case 'openai-compatible':
-        generatedText = data.choices[0]?.message?.content || 'No response generated';
+        generatedText = data.choices?.[0]?.message?.content || 'No response generated';
         break;
       case 'ollama':
         generatedText = data.message?.content || data.response || 'No response generated';
         break;
-      case 'api-generate':
-        // Simple API might just return the text directly or in a response field
-        generatedText = data.response || data.generated_text || data.text || data.content || data;
-        if (typeof generatedText === 'object') {
-          // Handle case where the response is an object
-          generatedText = JSON.stringify(generatedText);
-        }
-        break;
       case 'lmstudio':
-        generatedText = data.choices[0]?.message?.content || 'No response generated';
+        generatedText = data.choices?.[0]?.message?.content || 'No response generated';
         break;
       default:
         generatedText = data.choices?.[0]?.message?.content || 
                         data.message?.content || 
                         data.response || 
+                        data.generated_text ||
                         'No response generated';
         break;
     }
     
-    console.log('Generated text:', generatedText.substring(0, 200) + '...');
     return generatedText;
   } catch (error) {
     console.error('Error generating text with LLM:', error);
-    return `Error: Could not connect to AI model. Please ensure the API endpoint is correct and accessible: ${apiUrl}`;
+    return `Error: Could not connect to LLM model. Please ensure your API endpoint and key are correct.`;
   }
 }
 
@@ -393,5 +433,61 @@ export async function generateImageWithStableDiffusion(
   } catch (error) {
     console.error('Error generating image with local Stable Diffusion:', error);
     return `Error: Could not connect to local Stable Diffusion model. Please ensure your local server is running at ${apiUrl}`;
+  }
+}
+
+// Add a function to update the API key in the config
+export function updateMistralApiKey(apiKey: string): void {
+  const config = getConfig();
+  config.mistralApiKey = apiKey;
+  localStorage.setItem('local-ai-config', JSON.stringify(config));
+}
+
+// Add a function to test the connection to the Mistral API
+export async function testMistralConnection(): Promise<{success: boolean, message: string}> {
+  try {
+    const config = getConfig();
+    const response = await generateTextWithMistral([{role: 'user', content: 'Hello, this is a connection test.'}]);
+    
+    if (response.includes('Error:')) {
+      return {
+        success: false,
+        message: response
+      };
+    }
+    
+    return {
+      success: true,
+      message: 'Successfully connected to Mistral API!'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Connection failed: ${error.message}`
+    };
+  }
+}
+
+// Add a function to test the connection to the Stable Diffusion API
+export async function testStableDiffusionConnection(): Promise<{success: boolean, message: string}> {
+  try {
+    const response = await generateImageWithStableDiffusion('A simple test image of a blue circle');
+    
+    if (response.includes('Error:')) {
+      return {
+        success: false,
+        message: response
+      };
+    }
+    
+    return {
+      success: true,
+      message: 'Successfully connected to Stable Diffusion API!'
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: `Connection failed: ${error.message}`
+    };
   }
 }
