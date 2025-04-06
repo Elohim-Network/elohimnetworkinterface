@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { format } from 'date-fns';
@@ -60,7 +61,7 @@ const CalendarTasks: React.FC = () => {
   const [activeView, setActiveView] = useState<'calendar' | 'tasks'>('tasks');
   const [taskFilter, setTaskFilter] = useState<'all' | 'completed' | 'pending'>('all');
   
-  const { register, handleSubmit, reset, setValue, getValues, formState: { errors } } = useForm<TaskFormValues & EventFormValues>({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<TaskFormValues & EventFormValues>({
     defaultValues: {
       taskTitle: "",
       taskDescription: "",
