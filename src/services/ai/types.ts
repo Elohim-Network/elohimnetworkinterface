@@ -1,4 +1,3 @@
-
 // AI Service Types
 export type ProviderType = 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'api-generate' | 'unknown';
 
