@@ -1,6 +1,7 @@
 
 import { getConfig } from './config';
 import { detectLlmBackend, formatMessages } from './utils';
+import { ProviderType } from './types';
 
 /**
  * Generate text using Mistral or other LLM models
@@ -173,7 +174,7 @@ export async function generateTextWithMistral(
     }
     
     return generatedText;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating text with LLM:', error);
     return `Error: Could not connect to LLM model. Please ensure your API endpoint and key are correct.`;
   }

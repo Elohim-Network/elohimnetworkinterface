@@ -445,7 +445,6 @@ export function updateMistralApiKey(apiKey: string): void {
 // Add a function to test the connection to the Mistral API
 export async function testMistralConnection(): Promise<{success: boolean, message: string}> {
   try {
-    const config = getConfig();
     const response = await generateTextWithMistral([{role: 'user', content: 'Hello, this is a connection test.'}]);
     
     if (response.includes('Error:')) {
