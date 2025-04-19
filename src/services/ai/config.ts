@@ -1,8 +1,13 @@
 
 import { AIServiceConfig } from './types';
 
-// The official Mistral AI API endpoint with the correct domain
-export const MISTRAL_API_URL = "https://agentelohim.com/v1/chat/completions";
+// Default endpoints for local models
+export const LOCAL_ENDPOINTS = {
+  OLLAMA: 'http://localhost:11434/api/generate',
+  LM_STUDIO: 'http://localhost:1234/v1/chat/completions',
+  AUTO1111: 'http://localhost:7860',
+  COMFYUI: 'http://localhost:8188'
+};
 
 // Get the stored configuration or use defaults
 export const getConfig = (): AIServiceConfig => {
@@ -15,13 +20,14 @@ export const getConfig = (): AIServiceConfig => {
     }
   }
   
-  // Default configuration with the updated URL
+  // Default configuration favoring local endpoints
   return {
-    mistralUrl: MISTRAL_API_URL,
-    stableDiffusionUrl: 'http://127.0.0.1:8188',
-    mistralModel: 'mistral-7b-instruct',
+    mistralUrl: LOCAL_ENDPOINTS.OLLAMA,
+    stableDiffusionUrl: LOCAL_ENDPOINTS.AUTO1111,
+    mistralModel: 'mistral',
     sdModel: 'stable-diffusion-v1-5',
-    mistralApiKey: '' // Store API key in config
+    mistralApiKey: '',
+    provider: 'ollama'
   };
 };
 

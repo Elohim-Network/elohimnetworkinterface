@@ -1,3 +1,4 @@
+
 // AI Service Types
 export type ProviderType = 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'api-generate' | 'unknown';
 
@@ -29,9 +30,41 @@ export interface AIServiceConfig {
   mistralModel: string;
   sdModel: string;
   mistralApiKey: string;
+  provider?: ProviderType;
 }
 
 export interface ConnectionTestResult {
   success: boolean;
   message: string;
+  provider?: ProviderType;
 }
+
+export type ModelFormat = 'chat' | 'completion' | 'generate';
+
+export interface LocalModelConfig {
+  name: string;
+  format: ModelFormat;
+  contextLength: number;
+  provider: ProviderType;
+}
+
+export const LOCAL_MODEL_CONFIGS: Record<string, LocalModelConfig> = {
+  'llama2': {
+    name: 'llama2',
+    format: 'chat',
+    contextLength: 4096,
+    provider: 'ollama'
+  },
+  'mistral': {
+    name: 'mistral',
+    format: 'chat',
+    contextLength: 8192,
+    provider: 'ollama'
+  },
+  'codellama': {
+    name: 'codellama',
+    format: 'completion',
+    contextLength: 16384,
+    provider: 'ollama'
+  }
+};
