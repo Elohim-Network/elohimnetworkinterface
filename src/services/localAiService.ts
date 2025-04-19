@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { OllamaRequest, OllamaResponse } from '@/types/chat';
 import { detectLlmBackend } from '@/services/ai/utils';
+import { ProviderType } from '@/services/ai/types';
 
 export const ollamaService = {
   async generateResponse(model: string, prompt: string, systemPrompt?: string): Promise<string> {
