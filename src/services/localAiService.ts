@@ -1,4 +1,3 @@
-
 // Local AI Service - Communicates with locally running AI models or cloud-based APIs like Mistral
 // This service handles connections to various LLMs and Stable Diffusion
 
