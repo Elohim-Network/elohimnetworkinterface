@@ -11,21 +11,25 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { detectLlmBackend } from '@/services/ai/utils';
 
+// Define a type for all possible status values
+type StatusType = 'unknown' | 'connected' | 'disconnected' | 'fixing';
+type StorageStatusType = 'unknown' | 'available' | 'unavailable' | 'fixing';
+
 interface SystemStatus {
   mistralApi: {
-    status: 'unknown' | 'connected' | 'disconnected' | 'fixing';
+    status: StatusType;
     message: string;
   };
   stableDiffusion: {
-    status: 'unknown' | 'connected' | 'disconnected' | 'fixing';
+    status: StatusType;
     message: string;
   };
   elementLabs: {
-    status: 'unknown' | 'connected' | 'disconnected' | 'fixing';
+    status: StatusType;
     message: string;
   };
   localStorage: {
-    status: 'unknown' | 'available' | 'unavailable' | 'fixing';
+    status: StorageStatusType;
     message: string;
   };
 }
