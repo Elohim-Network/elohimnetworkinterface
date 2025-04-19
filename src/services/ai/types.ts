@@ -1,6 +1,11 @@
-
 // AI Service Types
-export type ProviderType = 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'api-generate' | 'unknown';
+export type ProviderType = 
+  | 'mistral-cloud'
+  | 'openai-compatible' 
+  | 'ollama' 
+  | 'lmstudio'
+  | 'api-generate'
+  | 'unknown';
 
 // Status types for the diagnostics tool
 export type StatusType = 'unknown' | 'connected' | 'disconnected' | 'fixing';
