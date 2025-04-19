@@ -12,6 +12,7 @@ import Marketplace from "./pages/Marketplace";
 import AdminDashboard from "./pages/AdminDashboard";
 import JukeboxHero from "./components/JukeboxHero";
 import BusinessTools from "./components/BusinessTools";
+import LocalChat from "./components/LocalChat";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/jukebox" element={<JukeboxHero />} />
             <Route path="/business" element={<BusinessTools />} />
+            <Route path="/local-chat" element={<LocalChat />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

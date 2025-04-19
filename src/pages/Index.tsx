@@ -1,16 +1,18 @@
+
 import React, { useEffect, useState } from 'react';
 import ChatInterface from '@/components/ChatInterface';
 import BusinessTools from '@/components/BusinessTools';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { ArrowLeft, ShoppingCart, AlertCircle, Music, Settings } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, AlertCircle, Music, Settings, Cpu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { useExitIntent } from '@/hooks/useExitIntent';
 import ConnectionStatus from '@/components/ConnectionStatus';
 import { useModules } from '@/hooks/useModules';
 import ConnectionTester from '@/components/ConnectionTester';
+import LocalChat from '@/components/LocalChat';
 
 const API_ENDPOINTS = {
   CHAT_COMPLETIONS: "https://agentelohim.com/v1/chat/completions",
@@ -18,7 +20,7 @@ const API_ENDPOINTS = {
 };
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<'chat' | 'tools' | 'jukebox' | 'connections'>('chat');
+  const [activeView, setActiveView] = useState<'chat' | 'tools' | 'jukebox' | 'connections' | 'local-chat'>('chat');
   const [backendStatus, setBackendStatus] = useState<{
     mistral: 'unknown' | 'connected' | 'disconnected';
     stableDiffusion: 'unknown' | 'connected' | 'disconnected';
@@ -212,7 +214,7 @@ const Index = () => {
               } else if (value === 'jukebox') {
                 handleJukeboxClick();
               } else {
-                setActiveView(value as 'chat' | 'tools' | 'jukebox' | 'connections');
+                setActiveView(value as 'chat' | 'tools' | 'jukebox' | 'connections' | 'local-chat');
               }
             }}
             className="w-auto"
@@ -223,6 +225,10 @@ const Index = () => {
               <TabsTrigger value="jukebox" className="flex items-center gap-1">
                 <Music className="h-4 w-4" />
                 Jukebox Hero
+              </TabsTrigger>
+              <TabsTrigger value="local-chat" className="flex items-center gap-1">
+                <Cpu className="h-4 w-4" />
+                Local LLM
               </TabsTrigger>
               <TabsTrigger value="connections" className="flex items-center gap-1">
                 <Settings className="h-4 w-4" />
@@ -248,6 +254,8 @@ const Index = () => {
             <ChatInterface />
           ) : activeView === 'tools' ? (
             <BusinessTools />
+          ) : activeView === 'local-chat' ? (
+            <LocalChat />
           ) : activeView === 'connections' ? (
             <div className="p-6 overflow-auto h-full">
               <div className="max-w-3xl mx-auto">
