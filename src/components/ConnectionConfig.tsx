@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { VoiceInfo } from '@/hooks/useVoice';
 import { Switch } from '@/components/ui/switch';
 import VoiceRecorder from './VoiceRecorder';
 import * as browserVoiceService from '@/services/browserVoiceService';
-import { testMistralConnection, testStableDiffusionConnection } from '@/services/localAiService';
+import { testMistralConnection, testStableDiffusionConnection, updateMistralApiKey } from '@/services/ai';
 import ConnectionTester from './ConnectionTester';
 import { ChatSession } from '@/types/chat';
 

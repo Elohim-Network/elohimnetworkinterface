@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Message, ChatSession, MessageRole } from '@/types/chat';
-import { generateTextWithMistral, generateImageWithStableDiffusion } from '@/services/localAiService';
+import { generateTextWithMistral, generateImageWithStableDiffusion } from '@/services/ai';
 
 // Mock data for initial development until backend integration
 const MOCK_INITIAL_MESSAGE: Message = {

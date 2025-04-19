@@ -1,113 +1,110 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { testMistralConnection, testStableDiffusionConnection } from '@/services/localAiService';
-import { Loader2, Check, X, Server, Image } from 'lucide-react';
+import { testMistralConnection, testStableDiffusionConnection } from '@/services/ai';
+import { Check, X, Loader2 } from 'lucide-react';
 
-const ConnectionTester = () => {
-  const [isMistralTesting, setIsMistralTesting] = useState(false);
-  const [mistralResult, setMistralResult] = useState<{success: boolean, message: string} | null>(null);
+const ConnectionTester: React.FC = () => {
+  const [testingMistral, setTestingMistral] = useState(false);
+  const [mistralStatus, setMistralStatus] = useState<{success: boolean, message: string} | null>(null);
+  const [testingSD, setTestingSD] = useState(false);
+  const [sdStatus, setSDStatus] = useState<{success: boolean, message: string} | null>(null);
   
-  const [isSDTesting, setIsSDTesting] = useState(false);
-  const [sdResult, setSDResult] = useState<{success: boolean, message: string} | null>(null);
-  
-  const testMistral = async () => {
-    setIsMistralTesting(true);
+  const handleTestMistral = async () => {
+    setTestingMistral(true);
+    setMistralStatus(null);
+    
     try {
       const result = await testMistralConnection();
-      setMistralResult(result);
-    } catch (error) {
-      setMistralResult({ success: false, message: `Test failed: ${error.message}` });
+      setMistralStatus(result);
+    } catch (error: any) {
+      setMistralStatus({
+        success: false,
+        message: `Error: ${error.message}`
+      });
     } finally {
-      setIsMistralTesting(false);
+      setTestingMistral(false);
     }
   };
   
-  const testStableDiffusion = async () => {
-    setIsSDTesting(true);
+  const handleTestStableDiffusion = async () => {
+    setTestingSD(true);
+    setSDStatus(null);
+    
     try {
       const result = await testStableDiffusionConnection();
-      setSDResult(result);
-    } catch (error) {
-      setSDResult({ success: false, message: `Test failed: ${error.message}` });
+      setSDStatus(result);
+    } catch (error: any) {
+      setSDStatus({
+        success: false,
+        message: `Error: ${error.message}`
+      });
     } finally {
-      setIsSDTesting(false);
+      setTestingSD(false);
     }
   };
   
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Server className="h-5 w-5" />
-            Mistral AI Connection Test
-          </CardTitle>
-          <CardDescription>
-            Test the connection to the Mistral API which powers the chat functionality across all modules
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {mistralResult && (
-            <Alert className={mistralResult.success ? "bg-green-500/10" : "bg-destructive/10"}>
-              <div className="flex items-center gap-2">
-                {mistralResult.success ? (
-                  <Check className="h-5 w-5 text-green-500" />
-                ) : (
-                  <X className="h-5 w-5 text-destructive" />
-                )}
-                <AlertTitle>{mistralResult.success ? "Success" : "Failed"}</AlertTitle>
-              </div>
-              <AlertDescription className="mt-2">
-                {mistralResult.message}
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-        <CardFooter>
-          <Button onClick={testMistral} disabled={isMistralTesting}>
-            {isMistralTesting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isMistralTesting ? 'Testing...' : 'Test Mistral Connection'}
-          </Button>
-        </CardFooter>
-      </Card>
+    <div className="space-y-4 border rounded-md p-4 mt-4">
+      <h3 className="font-medium">Test Connections</h3>
       
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Image className="h-5 w-5" />
-            Stable Diffusion Connection Test
-          </CardTitle>
-          <CardDescription>
-            Test the connection to the Stable Diffusion API which powers image generation across all modules
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {sdResult && (
-            <Alert className={sdResult.success ? "bg-green-500/10" : "bg-destructive/10"}>
-              <div className="flex items-center gap-2">
-                {sdResult.success ? (
-                  <Check className="h-5 w-5 text-green-500" />
-                ) : (
-                  <X className="h-5 w-5 text-destructive" />
-                )}
-                <AlertTitle>{sdResult.success ? "Success" : "Failed"}</AlertTitle>
+      <div className="space-y-2">
+        <div className="flex justify-between items-center">
+          <div>
+            <span className="font-medium">Mistral Connection</span>
+            {mistralStatus && (
+              <div className={`text-sm ${mistralStatus.success ? 'text-green-500' : 'text-red-500'} mt-1`}>
+                {mistralStatus.message}
               </div>
-              <AlertDescription className="mt-2">
-                {sdResult.message}
-              </AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-        <CardFooter>
-          <Button onClick={testStableDiffusion} disabled={isSDTesting}>
-            {isSDTesting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isSDTesting ? 'Testing...' : 'Test Stable Diffusion Connection'}
+            )}
+          </div>
+          <Button 
+            size="sm" 
+            onClick={handleTestMistral} 
+            disabled={testingMistral}
+            variant={mistralStatus?.success ? "outline" : "default"}
+            className={mistralStatus?.success ? "border-green-500 text-green-500" : ""}
+          >
+            {testingMistral ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : mistralStatus?.success ? (
+              <Check className="h-4 w-4" />
+            ) : mistralStatus?.success === false ? (
+              <X className="h-4 w-4" />
+            ) : (
+              "Test Connection"
+            )}
           </Button>
-        </CardFooter>
-      </Card>
+        </div>
+        
+        <div className="flex justify-between items-center">
+          <div>
+            <span className="font-medium">Stable Diffusion Connection</span>
+            {sdStatus && (
+              <div className={`text-sm ${sdStatus.success ? 'text-green-500' : 'text-red-500'} mt-1`}>
+                {sdStatus.message}
+              </div>
+            )}
+          </div>
+          <Button 
+            size="sm" 
+            onClick={handleTestStableDiffusion} 
+            disabled={testingSD}
+            variant={sdStatus?.success ? "outline" : "default"}
+            className={sdStatus?.success ? "border-green-500 text-green-500" : ""}
+          >
+            {testingSD ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : sdStatus?.success ? (
+              <Check className="h-4 w-4" />
+            ) : sdStatus?.success === false ? (
+              <X className="h-4 w-4" />
+            ) : (
+              "Test Connection"
+            )}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
