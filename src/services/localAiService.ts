@@ -19,7 +19,6 @@ export const ollamaService = {
       const config = { mistralUrl: 'http://127.0.0.1:11434/api/generate' };
       const backend = detectLlmBackend(config.mistralUrl);
 
-      // Use type-safe comparison
       if (backend === 'api-generate') {
         const { data, error } = await supabase.functions.invoke('local-llm-proxy', {
           body: request,

@@ -167,6 +167,7 @@ const ConnectionTester = () => {
           Full Diagnostics
         </Button>
       </div>
+      
       <div className="space-y-4 border rounded-md p-4">
         <div className="space-y-2">
           <div className="flex justify-between items-center">

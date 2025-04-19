@@ -10,6 +10,11 @@ export interface Message {
   type?: 'text' | 'image'; // To differentiate between text and image responses
 }
 
+export interface ChatMessage {
+  role: string;
+  content: string;
+}
+
 export interface ChatSession {
   id: string;
   title: string;

@@ -2,9 +2,7 @@
 import { getConfig } from '../config';
 import { ChatMessage } from '../../../types/chat';
 import { detectLlmBackend } from '../utils';
-import { mistralCloudHandler } from '../backends/mistralCloud';
-import { ollamaHandler } from '../backends/ollamaHandler';
-import { openAiCompatibleHandler } from '../backends/openAiCompatible';
+import { handleWithProvider } from '../backends/providerManager';
 
 export async function generateTextWithMistral(
   messages: ChatMessage[]
@@ -19,20 +17,7 @@ export async function generateTextWithMistral(
     const backend = detectLlmBackend(config.mistralUrl);
     console.log(`Detected backend: ${backend}`);
     
-    switch (backend) {
-      case 'mistral-cloud':
-        return await mistralCloudHandler(messages, modelName, apiKey);
-      case 'ollama':
-        return await ollamaHandler(messages, modelName);
-      case 'openai-compatible':
-        return await openAiCompatibleHandler(messages, modelName, apiKey);
-      case 'api-generate':
-        // For api-generate endpoint, only use the last message
-        const lastMessage = messages[messages.length - 1];
-        return await ollamaHandler([lastMessage], modelName);
-      default:
-        return await openAiCompatibleHandler(messages, modelName, apiKey);
-    }
+    return await handleWithProvider(messages, backend, modelName, apiKey);
   } catch (error: any) {
     console.error('Error generating text with LLM:', error);
     return `Error: Could not connect to LLM model. Please ensure your API endpoint and key are correct.`;
