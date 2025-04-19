@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -10,10 +9,7 @@ import { testStableDiffusionConnection } from '@/services/ai/imageService';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { detectLlmBackend } from '@/services/ai/utils';
-
-// Define a type for all possible status values
-type StatusType = 'unknown' | 'connected' | 'disconnected' | 'fixing';
-type StorageStatusType = 'unknown' | 'available' | 'unavailable' | 'fixing';
+import { StatusType, StorageStatusType } from '@/services/ai/types';
 
 interface SystemStatus {
   mistralApi: {
@@ -71,12 +67,10 @@ const DiagnosticsTool: React.FC = () => {
     );
   };
   
-  // Run diagnostics on all systems
   const runFullDiagnostics = async () => {
     setIsRunningDiagnostics(true);
     toast.info("Running system diagnostics...");
     
-    // Test in sequence to avoid overwhelming the UI with updates
     await testMistralConnection();
     await testStableDiffusionStorage();
     await testLocalStorage();
@@ -93,7 +87,6 @@ const DiagnosticsTool: React.FC = () => {
     }
   };
   
-  // Test connection to Mistral API
   const testMistralConnection = async () => {
     setSystemStatus(prev => ({
       ...prev,
@@ -125,7 +118,6 @@ const DiagnosticsTool: React.FC = () => {
     }
   };
   
-  // Test connection to Stable Diffusion
   const testStableDiffusionStorage = async () => {
     setSystemStatus(prev => ({
       ...prev,
@@ -157,7 +149,6 @@ const DiagnosticsTool: React.FC = () => {
     }
   };
   
-  // Test local storage
   const testLocalStorage = async () => {
     setSystemStatus(prev => ({
       ...prev,
@@ -165,7 +156,6 @@ const DiagnosticsTool: React.FC = () => {
     }));
     
     try {
-      // Test if localStorage is available
       const testKey = '_test_storage_';
       localStorage.setItem(testKey, 'test');
       const value = localStorage.getItem(testKey);
@@ -195,7 +185,6 @@ const DiagnosticsTool: React.FC = () => {
     }
   };
   
-  // Attempt to fix Mistral API connection
   const fixMistralConnection = async () => {
     toast.info("Attempting to fix Mistral API connection...");
     
@@ -207,12 +196,11 @@ const DiagnosticsTool: React.FC = () => {
     try {
       const config = getConfig();
       
-      // Try different endpoint formats
       const endpoints = [
         "https://agentelohim.com/v1/chat/completions",
         "https://agentelohim.com/api/generate",
-        "http://localhost:11434/api/generate", // Ollama default
-        "http://localhost:1234/v1/chat/completions", // LM Studio default
+        "http://localhost:11434/api/generate",
+        "http://localhost:1234/v1/chat/completions",
       ];
       
       let foundWorkingEndpoint = false;
@@ -224,18 +212,15 @@ const DiagnosticsTool: React.FC = () => {
         }));
         
         try {
-          // Check if endpoint is accessible
           const checkResponse = await fetch(endpoint, { 
             method: 'OPTIONS',
             headers: { 'Content-Type': 'application/json' }
           }).catch(() => null);
           
           if (checkResponse && checkResponse.ok) {
-            // Update config with working endpoint
             config.mistralUrl = endpoint;
             saveConfig(config);
             
-            // Check backend type
             const backendType = detectLlmBackend(endpoint);
             toast.success(`Found working endpoint (${backendType}): ${endpoint}`);
             
@@ -248,7 +233,6 @@ const DiagnosticsTool: React.FC = () => {
       }
       
       if (foundWorkingEndpoint) {
-        // Test the connection again with the new endpoint
         await testMistralConnection();
       } else {
         setSystemStatus(prev => ({
@@ -274,7 +258,6 @@ const DiagnosticsTool: React.FC = () => {
     }
   };
   
-  // Attempt to fix Stable Diffusion connection
   const fixStableDiffusionConnection = async () => {
     toast.info("Attempting to fix Stable Diffusion connection...");
     
@@ -286,12 +269,11 @@ const DiagnosticsTool: React.FC = () => {
     try {
       const config = getConfig();
       
-      // Try different endpoint formats for Stable Diffusion
       const endpoints = [
-        "http://127.0.0.1:7860/sdapi/v1/txt2img", // Automatic1111
-        "http://127.0.0.1:8188",                  // ComfyUI
-        "http://localhost:7860/sdapi/v1/txt2img", // Automatic1111 alt
-        "http://localhost:8188",                  // ComfyUI alt
+        "http://127.0.0.1:7860/sdapi/v1/txt2img",
+        "http://127.0.0.1:8188",
+        "http://localhost:7860/sdapi/v1/txt2img",
+        "http://localhost:8188",
       ];
       
       let foundWorkingEndpoint = false;
@@ -303,14 +285,12 @@ const DiagnosticsTool: React.FC = () => {
         }));
         
         try {
-          // Check if endpoint is accessible
           const checkResponse = await fetch(endpoint, { 
             method: 'OPTIONS',
             headers: { 'Content-Type': 'application/json' }
           }).catch(() => null);
           
           if (checkResponse && checkResponse.ok) {
-            // Update config with working endpoint
             config.stableDiffusionUrl = endpoint;
             saveConfig(config);
             
@@ -325,7 +305,6 @@ const DiagnosticsTool: React.FC = () => {
       }
       
       if (foundWorkingEndpoint) {
-        // Test the connection again with the new endpoint
         await testStableDiffusionStorage();
       } else {
         setSystemStatus(prev => ({
@@ -351,7 +330,6 @@ const DiagnosticsTool: React.FC = () => {
     }
   };
   
-  // Fix local storage issues
   const fixLocalStorage = async () => {
     toast.info("Attempting to fix local storage...");
     
@@ -361,18 +339,15 @@ const DiagnosticsTool: React.FC = () => {
     }));
     
     try {
-      // Try to clear potential corrupt data
       const configBackup = getConfig();
       
       try {
         localStorage.clear();
-        // Re-save the config
         saveConfig(configBackup);
       } catch (error) {
         console.error("Error clearing localStorage:", error);
       }
       
-      // Test again
       const result = await testLocalStorage();
       
       if (!result) {
@@ -393,11 +368,9 @@ const DiagnosticsTool: React.FC = () => {
     }
   };
   
-  // Fix all errors
   const fixAllIssues = async () => {
     toast.info("Attempting to fix all detected issues...");
     
-    // Fix in sequence
     if (systemStatus.mistralApi.status === 'disconnected') {
       await fixMistralConnection();
     }
@@ -410,18 +383,15 @@ const DiagnosticsTool: React.FC = () => {
       await fixLocalStorage();
     }
     
-    // Run diagnostics again to verify fixes
     runFullDiagnostics();
   };
   
-  // Run initial diagnostics on mount
   useEffect(() => {
     runFullDiagnostics();
   }, []);
   
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6 p-4">
-      {/* Status Button */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <Shield className="h-6 w-6" />
@@ -481,7 +451,6 @@ const DiagnosticsTool: React.FC = () => {
           <TabsTrigger value="settings">Configuration</TabsTrigger>
         </TabsList>
         <TabsContent value="diagnostics" className="mt-4 space-y-4">
-          {/* Fix All Button */}
           {overallStatus() === 'error' && (
             <Button 
               className="w-full" 
@@ -493,7 +462,6 @@ const DiagnosticsTool: React.FC = () => {
             </Button>
           )}
           
-          {/* Mistral API Status */}
           <div className="border rounded-lg p-4 space-y-2">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -550,7 +518,6 @@ const DiagnosticsTool: React.FC = () => {
             </div>
           </div>
           
-          {/* Stable Diffusion Status */}
           <div className="border rounded-lg p-4 space-y-2">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -607,7 +574,6 @@ const DiagnosticsTool: React.FC = () => {
             </div>
           </div>
           
-          {/* Local Storage Status */}
           <div className="border rounded-lg p-4 space-y-2">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
@@ -664,7 +630,6 @@ const DiagnosticsTool: React.FC = () => {
             </div>
           </div>
           
-          {/* System Information */}
           <div className="border rounded-lg p-4 space-y-2">
             <h3 className="text-lg font-medium">System Information</h3>
             

@@ -1,7 +1,7 @@
 
 import { getConfig } from './config';
 import { detectLlmBackend, formatMessages } from './utils';
-import { ProviderType } from './types';
+import { ProviderType, ConnectionTestResult } from './types';
 
 /**
  * Generate text using Mistral or other LLM models
@@ -183,7 +183,7 @@ export async function generateTextWithMistral(
 /**
  * Test the connection to the Mistral API
  */
-export async function testMistralConnection(): Promise<{success: boolean, message: string}> {
+export async function testMistralConnection(): Promise<ConnectionTestResult> {
   try {
     const response = await generateTextWithMistral([{role: 'user', content: 'Hello, this is a connection test.'}]);
     

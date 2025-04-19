@@ -2,6 +2,10 @@
 // AI Service Types
 export type ProviderType = 'mistral-cloud' | 'openai-compatible' | 'ollama' | 'lmstudio' | 'api-generate' | 'unknown';
 
+// Status types for the diagnostics tool
+export type StatusType = 'unknown' | 'connected' | 'disconnected' | 'fixing';
+export type StorageStatusType = 'unknown' | 'available' | 'unavailable' | 'fixing';
+
 export interface MistralCompletionRequest {
   model: string;
   messages: Array<{ role: string; content: string }>;
