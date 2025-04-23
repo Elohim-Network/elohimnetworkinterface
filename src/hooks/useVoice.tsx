@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import * as elevenLabsService from '@/services/elevenLabsService';
 import * as browserVoiceService from '@/services/browserVoiceService';
+import '../types/speech-recognition.d.ts';
 
 // Debug logging function that always logs regardless of environment
 const debugLog = (...args: any[]) => {
@@ -190,9 +191,10 @@ export const useVoice = () => {
 
   // Initialize speech recognition on component mount
   useEffect(() => {
-    if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognitionInstance = new SpeechRecognition();
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (SpeechRecognitionAPI) {
+      const recognitionInstance = new SpeechRecognitionAPI();
       
       recognitionInstance.continuous = true;
       recognitionInstance.interimResults = true;

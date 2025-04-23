@@ -45,13 +45,18 @@ interface SpeechRecognitionErrorEvent extends Event {
   readonly message: string;
 }
 
-declare var SpeechRecognition: {
-  prototype: SpeechRecognition;
-  new(): SpeechRecognition;
-};
+// Add these declarations to the global Window interface
+declare global {
+  interface Window {
+    SpeechRecognition: {
+      prototype: SpeechRecognition;
+      new(): SpeechRecognition;
+    };
+    webkitSpeechRecognition: {
+      prototype: SpeechRecognition;
+      new(): SpeechRecognition;
+    };
+  }
+}
 
-declare var webkitSpeechRecognition: {
-  prototype: SpeechRecognition;
-  new(): SpeechRecognition;
-};
-
+export {};
