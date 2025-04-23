@@ -16,6 +16,7 @@ import * as browserVoiceService from '@/services/browserVoiceService';
 import { testMistralConnection, testStableDiffusionConnection, updateMistralApiKey } from '@/services/ai';
 import ConnectionTester from './ConnectionTester';
 import { ChatSession } from '@/types/chat';
+import { getConfig, saveConfig } from '@/services/ai/config';
 
 interface ConnectionConfigProps {
   onUpdate: (config: {
@@ -55,10 +56,10 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
   useBrowserVoice,
   onToggleBrowserVoice
 }) => {
-  const [mistralUrl, setMistralUrl] = useState(localStorage.getItem('mistralUrl') || 'http://localhost:11434');
-  const [stableDiffusionUrl, setStableDiffusionUrl] = useState(localStorage.getItem('stableDiffusionUrl') || 'http://localhost:7860');
-  const [mistralModel, setMistralModel] = useState(localStorage.getItem('mistralModel') || 'mistral');
-  const [sdModel, setSdModel] = useState(localStorage.getItem('sdModel') || 'sdxl');
+  const [mistralUrl, setMistralUrl] = useState('');
+  const [stableDiffusionUrl, setStableDiffusionUrl] = useState('');
+  const [mistralModel, setMistralModel] = useState('');
+  const [sdModel, setSdModel] = useState('');
   const [apiKey, setApiKey] = useState(elevenLabsApiKey || '');
   const [newVoiceName, setNewVoiceName] = useState('');
   const [newVoiceDesc, setNewVoiceDesc] = useState('');
@@ -67,26 +68,59 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [tabValue, setTabValue] = useState("connections");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isConfigSaving, setIsConfigSaving] = useState(false);
   
-  const handleSave = () => {
-    localStorage.setItem('mistralUrl', mistralUrl);
-    localStorage.setItem('stableDiffusionUrl', stableDiffusionUrl);
-    localStorage.setItem('mistralModel', mistralModel);
-    localStorage.setItem('sdModel', sdModel);
-    localStorage.setItem('elevenLabsApiKey', apiKey);
+  // Load config on component mount
+  useEffect(() => {
+    const config = getConfig();
+    setMistralUrl(config.mistralUrl);
+    setStableDiffusionUrl(config.stableDiffusionUrl);
+    setMistralModel(config.mistralModel || 'mistral');
+    setSdModel(config.sdModel || 'sdxl');
+  }, []);
+  
+  // Track unsaved changes
+  useEffect(() => {
+    const config = getConfig();
+    const hasChanges = 
+      mistralUrl !== config.mistralUrl ||
+      stableDiffusionUrl !== config.stableDiffusionUrl ||
+      mistralModel !== config.mistralModel ||
+      sdModel !== config.sdModel;
+      
+    setHasUnsavedChanges(hasChanges);
+  }, [mistralUrl, stableDiffusionUrl, mistralModel, sdModel]);
+  
+  const handleSave = async () => {
+    setIsConfigSaving(true);
     
-    onUpdate({
-      mistralUrl,
-      stableDiffusionUrl,
-      mistralModel,
-      sdModel
-    });
-
-    if (onUpdateApiKey) {
-      onUpdateApiKey(apiKey);
+    try {
+      // Save to localStorage
+      const config = getConfig();
+      config.mistralUrl = mistralUrl;
+      config.stableDiffusionUrl = stableDiffusionUrl;
+      config.mistralModel = mistralModel;
+      config.sdModel = sdModel;
+      saveConfig(config);
+      
+      // Call the onUpdate callback
+      if (onUpdate) {
+        onUpdate({
+          mistralUrl,
+          stableDiffusionUrl,
+          mistralModel,
+          sdModel
+        });
+      }
+      
+      toast.success('All connection settings saved successfully');
+      setHasUnsavedChanges(false);
+    } catch (error: any) {
+      toast.error(`Error saving settings: ${error.message}`);
+    } finally {
+      setIsConfigSaving(false);
     }
-    
-    toast.success('All connection settings saved successfully');
   };
   
   const handleApiKeySave = () => {
@@ -219,6 +253,25 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
           </DialogDescription>
         </DialogHeader>
 
+        {/* Floating save button that appears when there are unsaved changes */}
+        {hasUnsavedChanges && (
+          <div className="fixed bottom-4 right-4 z-50">
+            <Button 
+              onClick={handleSave} 
+              className="shadow-lg flex items-center gap-2"
+              disabled={isConfigSaving}
+              size="lg"
+            >
+              {isConfigSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              Save Changes
+            </Button>
+          </div>
+        )}
+
         <Tabs value={tabValue} onValueChange={setTabValue} className="mt-4">
           <TabsList className="grid grid-cols-3 mb-4">
             <TabsTrigger value="connections">Connections</TabsTrigger>
@@ -237,6 +290,9 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                   placeholder="http://localhost:11434"
                   className="mt-1"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  For Ollama: http://localhost:11434/api/generate or http://localhost:1234/v1/chat/completions for LM Studio
+                </p>
               </div>
               
               <div>
@@ -247,8 +303,11 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="mistral">Mistral</SelectItem>
+                    <SelectItem value="mistral-7b-instruct">Mistral 7B Instruct</SelectItem>
                     <SelectItem value="mixtral">Mixtral</SelectItem>
                     <SelectItem value="llama3">Llama 3</SelectItem>
+                    <SelectItem value="llama3:8b">Llama 3 (8B)</SelectItem>
+                    <SelectItem value="llama3:70b">Llama 3 (70B)</SelectItem>
                     <SelectItem value="codellama">Code Llama</SelectItem>
                   </SelectContent>
                 </Select>
@@ -263,6 +322,9 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                   placeholder="http://localhost:7860"
                   className="mt-1"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  For Automatic1111: http://localhost:7860 or http://localhost:8188 for ComfyUI
+                </p>
               </div>
               
               <div>
@@ -275,14 +337,25 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
                     <SelectItem value="sdxl">SDXL</SelectItem>
                     <SelectItem value="sd15">SD 1.5</SelectItem>
                     <SelectItem value="sd2">SD 2</SelectItem>
+                    <SelectItem value="sd3">SD 3</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
-              <Button className="w-full" onClick={handleSave}>
-                <Save className="mr-2 h-4 w-4" />
-                Save Connection Settings
-              </Button>
+              <div className="flex justify-center pt-4 pb-2">
+                <Button 
+                  className="w-full max-w-sm" 
+                  onClick={handleSave} 
+                  disabled={isConfigSaving || !hasUnsavedChanges}
+                >
+                  {isConfigSaving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Save Connection Settings
+                </Button>
+              </div>
               
               <ConnectionTester />
             </div>
@@ -290,7 +363,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
           
           <TabsContent value="voice" className="space-y-4">
             <div className="flex justify-end mb-4">
-              <Button onClick={handleSave}>
+              <Button onClick={handleSave} disabled={!hasUnsavedChanges}>
                 <Save className="mr-2 h-4 w-4" />
                 Save Voice Settings
               </Button>
@@ -488,9 +561,9 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
           
           <TabsContent value="data" className="space-y-4">
             <div className="flex justify-end mb-4">
-              <Button onClick={handleSave}>
+              <Button onClick={handleSave} disabled={!hasUnsavedChanges}>
                 <Save className="mr-2 h-4 w-4" />
-                Save Data Settings
+                Save Settings
               </Button>
             </div>
             
