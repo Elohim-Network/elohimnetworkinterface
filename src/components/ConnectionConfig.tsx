@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -73,6 +72,7 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
     localStorage.setItem('stableDiffusionUrl', stableDiffusionUrl);
     localStorage.setItem('mistralModel', mistralModel);
     localStorage.setItem('sdModel', sdModel);
+    localStorage.setItem('elevenLabsApiKey', apiKey);
     
     onUpdate({
       mistralUrl,
@@ -80,123 +80,12 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
       mistralModel,
       sdModel
     });
-    
-    toast.success('Connection settings saved successfully');
-  };
 
-  const handleApiKeySave = () => {
     if (onUpdateApiKey) {
       onUpdateApiKey(apiKey);
-      toast.success('API key saved successfully');
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFiles(Array.from(e.target.files));
-    }
-  };
-
-  const handleCloneVoice = async () => {
-    if (!onCloneVoice) return;
-    
-    if (!newVoiceName.trim()) {
-      toast.error('Please provide a name for your voice');
-      return;
     }
     
-    if (files.length === 0) {
-      toast.error('Please upload at least one audio sample');
-      return;
-    }
-    
-    setIsCloning(true);
-    try {
-      const result = await onCloneVoice(newVoiceName, newVoiceDesc, files);
-      if (result) {
-        toast.success(`Voice "${newVoiceName}" created successfully`);
-        setNewVoiceName('');
-        setNewVoiceDesc('');
-        setFiles([]);
-      } else {
-        toast.error('Failed to create voice');
-      }
-    } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
-    } finally {
-      setIsCloning(false);
-    }
-  };
-
-  const handleDeleteVoice = async (voiceId: string) => {
-    if (!onDeleteVoice) return;
-    
-    setIsDeleting(true);
-    try {
-      const success = await onDeleteVoice(voiceId);
-      if (success) {
-        toast.success('Voice deleted successfully');
-      } else {
-        toast.error('Failed to delete voice');
-      }
-    } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleRefreshVoices = async () => {
-    if (!onRefreshVoices) return;
-    
-    setIsRefreshing(true);
-    try {
-      await onRefreshVoices();
-      toast.success('Voices refreshed successfully');
-    } catch (error: any) {
-      toast.error(`Error: ${error.message}`);
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  const handleExportChats = () => {
-    if (onExportChats) {
-      onExportChats();
-    }
-  };
-
-  const handleImportChats = async () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    
-    input.onchange = async (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      if (target.files && target.files.length > 0) {
-        const file = target.files[0];
-        try {
-          const importedSessions = await importChatsFromFile(file);
-          if (onImportChats && importedSessions) {
-            onImportChats(importedSessions, false);
-            toast.success('Chats imported successfully');
-          }
-        } catch (error: any) {
-          toast.error(`Import failed: ${error.message}`);
-        }
-      }
-    };
-    
-    input.click();
-  };
-
-  const handleSetSaveLocation = async () => {
-    try {
-      await setSaveLocation();
-      toast.success('Save location set successfully');
-    } catch (error: any) {
-      toast.error(`Failed to set save location: ${error.message}`);
-    }
+    toast.success('All connection settings saved successfully');
   };
 
   return (
@@ -284,6 +173,13 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
           </TabsContent>
           
           <TabsContent value="voice" className="space-y-4">
+            <div className="flex justify-end mb-4">
+              <Button onClick={handleSave}>
+                <Save className="mr-2 h-4 w-4" />
+                Save Voice Settings
+              </Button>
+            </div>
+            
             <div className="space-y-4">
               <div>
                 <div className="flex items-center justify-between mb-2">
@@ -475,6 +371,13 @@ const ConnectionConfig: React.FC<ConnectionConfigProps> = ({
           </TabsContent>
           
           <TabsContent value="data" className="space-y-4">
+            <div className="flex justify-end mb-4">
+              <Button onClick={handleSave}>
+                <Save className="mr-2 h-4 w-4" />
+                Save Data Settings
+              </Button>
+            </div>
+            
             <div className="space-y-4">
               <div className="space-y-2">
                 <h3 className="font-medium">Export & Import</h3>
