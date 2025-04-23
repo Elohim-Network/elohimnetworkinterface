@@ -20,6 +20,6 @@ export async function generateTextWithMistral(
     return await handleWithProvider(messages, backend, modelName, apiKey);
   } catch (error: any) {
     console.error('Error generating text with LLM:', error);
-    return `Error: Could not connect to LLM model. Please ensure your API endpoint and key are correct.`;
+    return `Error: Could not connect to LLM model. Please check your local Ollama server and ensure it's running.`;
   }
 }
