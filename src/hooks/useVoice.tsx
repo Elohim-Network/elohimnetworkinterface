@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import * as elevenLabsService from '@/services/elevenLabsService';
 import * as browserVoiceService from '@/services/browserVoiceService';
+import '../types/speech-recognition';
 
-// Debug logging function that always logs regardless of environment
 const debugLog = (...args: any[]) => {
   console.log('[Voice Debug]', ...args);
 };
@@ -33,7 +32,6 @@ export const useVoice = () => {
   const [currentBrowserVoiceId, setCurrentBrowserVoiceId] = useState('');
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Create audio element for playback
   useEffect(() => {
     audioRef.current = new Audio();
     
@@ -45,24 +43,20 @@ export const useVoice = () => {
     };
   }, []);
 
-  // Load API key and default voice ID from localStorage
   useEffect(() => {
     const storedApiKey = localStorage.getItem('elevenlabs-api-key') || '';
-    const storedVoiceId = localStorage.getItem('elevenlabs-voice-id') || 'EXAVITQu4vr4xnSDxMaL'; // Default voice (Sarah)
+    const storedVoiceId = localStorage.getItem('elevenlabs-voice-id') || 'EXAVITQu4vr4xnSDxMaL';
     
     setElevenLabsApiKey(storedApiKey);
     setCurrentVoiceId(storedVoiceId);
     
-    // Load voices if API key exists
     if (storedApiKey) {
       loadVoices();
     } else {
-      // Use default voices when no API key is set
       setAvailableVoices(elevenLabsService.getDefaultVoices());
     }
   }, []);
 
-  // Load available voices from ElevenLabs
   const loadVoices = useCallback(async () => {
     try {
       const voices = await elevenLabsService.getVoices();
@@ -75,7 +69,6 @@ export const useVoice = () => {
     }
   }, []);
 
-  // Update ElevenLabs API key
   const updateApiKey = useCallback((apiKey: string) => {
     setElevenLabsApiKey(apiKey);
     elevenLabsService.setApiKey(apiKey);
@@ -87,7 +80,6 @@ export const useVoice = () => {
     toast.success('ElevenLabs API key updated');
   }, [loadVoices]);
 
-  // Update the current voice
   const updateVoice = useCallback((voiceId: string) => {
     setCurrentVoiceId(voiceId);
     elevenLabsService.setDefaultVoiceId(voiceId);
@@ -98,7 +90,6 @@ export const useVoice = () => {
     }
   }, [availableVoices]);
 
-  // Clone a new voice
   const cloneVoice = useCallback(async (name: string, description: string, files: File[]) => {
     try {
       if (!elevenLabsApiKey) {
@@ -111,7 +102,7 @@ export const useVoice = () => {
       
       if (result) {
         toast.success(`Voice "${name}" created successfully`);
-        await loadVoices(); // Refresh the voice list
+        await loadVoices();
         return result;
       } else {
         toast.error('Failed to clone voice');
@@ -124,18 +115,16 @@ export const useVoice = () => {
     }
   }, [elevenLabsApiKey, loadVoices]);
 
-  // Delete a voice
   const deleteCustomVoice = useCallback(async (voiceId: string) => {
     try {
       const success = await elevenLabsService.deleteVoice(voiceId);
       
       if (success) {
         toast.success('Voice deleted successfully');
-        await loadVoices(); // Refresh the voice list
+        await loadVoices();
         
-        // If the deleted voice was the current one, switch to default
         if (currentVoiceId === voiceId) {
-          const defaultVoice = 'EXAVITQu4vr4xnSDxMaL'; // Sarah
+          const defaultVoice = 'EXAVITQu4vr4xnSDxMaL';
           setCurrentVoiceId(defaultVoice);
           elevenLabsService.setDefaultVoiceId(defaultVoice);
         }
@@ -152,7 +141,6 @@ export const useVoice = () => {
     }
   }, [currentVoiceId, loadVoices]);
 
-  // Load browser voices
   useEffect(() => {
     const storedBrowserVoices = browserVoiceService.getStoredVoices();
     setBrowserVoices(storedBrowserVoices);
@@ -160,19 +148,16 @@ export const useVoice = () => {
     const currentBrowserVoice = browserVoiceService.getCurrentVoiceId();
     setCurrentBrowserVoiceId(currentBrowserVoice);
     
-    // Check if browser voice is enabled
     const useBrowserVoiceSetting = localStorage.getItem('use-browser-voice') === 'true';
     setUseBrowserVoice(useBrowserVoiceSetting);
   }, []);
 
-  // Toggle between browser voice and ElevenLabs
   const toggleBrowserVoice = useCallback((use: boolean) => {
     setUseBrowserVoice(use);
     localStorage.setItem('use-browser-voice', String(use));
     toast.success(use ? 'Using your own voice recordings' : 'Using ElevenLabs voices');
   }, []);
 
-  // Update current browser voice
   const updateBrowserVoice = useCallback((voiceId: string) => {
     setCurrentBrowserVoiceId(voiceId);
     browserVoiceService.setCurrentVoiceId(voiceId);
@@ -183,13 +168,11 @@ export const useVoice = () => {
     }
   }, [browserVoices]);
 
-  // Refresh browser voices
   const refreshBrowserVoices = useCallback(() => {
     const voices = browserVoiceService.getStoredVoices();
     setBrowserVoices(voices);
   }, []);
 
-  // Initialize speech recognition on component mount
   useEffect(() => {
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     
@@ -219,7 +202,6 @@ export const useVoice = () => {
     };
   }, []);
 
-  // Set up event listeners for speech recognition
   useEffect(() => {
     if (!recognition) return;
     
@@ -231,7 +213,6 @@ export const useVoice = () => {
         let interimTranscript = '';
         let isFinal = false;
         
-        // Loop through the results to build final and interim transcripts
         for (let i = 0; i < event.results.length; i++) {
           const result = event.results[i];
           if (result.isFinal) {
@@ -242,12 +223,10 @@ export const useVoice = () => {
           }
         }
         
-        // If we have a final transcript, update the state and handle hands-free mode
         if (finalTranscript) {
           debugLog('Final transcript:', finalTranscript);
           setTranscript(finalTranscript);
           
-          // Save to voice history if hands-free mode is enabled
           if (handsFreeMode) {
             setVoiceHistory(prev => [...prev, {
               timestamp: Date.now(),
@@ -293,30 +272,6 @@ export const useVoice = () => {
     };
   }, [recognition, isListening, handsFreeMode]);
 
-  // Start or stop listening based on isListening state
-  useEffect(() => {
-    if (!recognition) return;
-    
-    if (isListening) {
-      try {
-        recognition.start();
-        debugLog('Speech recognition started');
-      } catch (error) {
-        debugLog('Error starting speech recognition:', error);
-        toast.error('Error starting speech recognition. Please try again.');
-        setIsListening(false);
-      }
-    } else {
-      try {
-        recognition.stop();
-        debugLog('Speech recognition stopped');
-      } catch (error) {
-        debugLog('Error stopping speech recognition:', error);
-      }
-    }
-  }, [isListening, recognition]);
-
-  // Toggle voice recognition on/off
   const toggleListening = useCallback(() => {
     setIsListening(prev => !prev);
     debugLog('Toggling listening state to:', !isListening);
@@ -328,7 +283,6 @@ export const useVoice = () => {
     }
   }, [isListening]);
 
-  // Toggle voice output on/off
   const toggleVoiceEnabled = useCallback(() => {
     setVoiceEnabled(prev => !prev);
     debugLog('Toggling voice enabled state to:', !voiceEnabled);
@@ -336,7 +290,6 @@ export const useVoice = () => {
     toast.info(voiceEnabled ? 'Voice output disabled' : 'Voice output enabled');
   }, [voiceEnabled]);
 
-  // Toggle hands-free mode on/off
   const toggleHandsFreeMode = useCallback(() => {
     setHandsFreeMode(prev => !prev);
     debugLog('Toggling hands-free mode to:', !handsFreeMode);
@@ -350,7 +303,6 @@ export const useVoice = () => {
     }
   }, [handsFreeMode, isListening]);
 
-  // Speak text using ElevenLabs TTS
   const speak = useCallback(async (text: string) => {
     if (!voiceEnabled) return;
     
@@ -358,7 +310,6 @@ export const useVoice = () => {
       setIsSpeaking(true);
       debugLog('Speaking:', text.substring(0, 50) + '...');
       
-      // If browser voice is enabled and we have a browser voice ID
       if (useBrowserVoice && currentBrowserVoiceId) {
         debugLog('Using browser voice:', currentBrowserVoiceId);
         
@@ -368,11 +319,9 @@ export const useVoice = () => {
           return;
         } catch (error) {
           console.error('Error using browser voice:', error);
-          // Fall through to other methods if browser voice fails
         }
       }
       
-      // If we don't have an API key or browser voice failed, use the native Speech Synthesis
       if (!elevenLabsApiKey || useBrowserVoice) {
         if ('speechSynthesis' in window) {
           const synthesis = window.speechSynthesis;
@@ -397,14 +346,12 @@ export const useVoice = () => {
         return;
       }
       
-      // Use ElevenLabs TTS
       const audioData = await elevenLabsService.textToSpeech(text, currentVoiceId);
       
       if (!audioData) {
         throw new Error('Failed to get audio data');
       }
       
-      // Create audio blob and play it
       const blob = new Blob([audioData], { type: 'audio/mpeg' });
       const url = URL.createObjectURL(blob);
       
@@ -428,7 +375,6 @@ export const useVoice = () => {
       console.error('Error during text-to-speech:', error);
       setIsSpeaking(false);
       
-      // Fallback to browser speech synthesis
       if ('speechSynthesis' in window) {
         const synthesis = window.speechSynthesis;
         const utterance = new SpeechSynthesisUtterance(text);
@@ -443,7 +389,6 @@ export const useVoice = () => {
     }
   }, [voiceEnabled, elevenLabsApiKey, currentVoiceId, useBrowserVoice, currentBrowserVoiceId]);
 
-  // Stop any ongoing speech
   const stopSpeaking = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -458,7 +403,6 @@ export const useVoice = () => {
     debugLog('Speech stopped');
   }, []);
 
-  // Reset transcript
   const resetTranscript = useCallback(() => {
     setTranscript('');
     debugLog('Transcript reset');
