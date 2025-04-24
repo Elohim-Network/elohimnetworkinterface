@@ -1,10 +1,8 @@
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import * as elevenLabsService from '@/services/elevenLabsService';
 import * as browserVoiceService from '@/services/browserVoiceService';
-// Fix the import path to correctly reference the declaration file
-import '../types/speech-recognition.d.ts';
+import type { SpeechRecognition, SpeechRecognitionEvent, SpeechRecognitionErrorEvent } from '../types/speech-recognition.d.ts';
 
 const debugLog = (...args: any[]) => {
   console.log('[Voice Debug]', ...args);

@@ -9,7 +9,224 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      artworks: {
+        Row: {
+          artist: string
+          audio_description_url: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string
+          price: number
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          artist: string
+          audio_description_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url: string
+          price?: number
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          artist?: string
+          audio_description_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string
+          price?: number
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      broadcasts: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean
+          order: number
+          title: string
+          type: string
+          updated_at: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          order?: number
+          title: string
+          type: string
+          updated_at?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean
+          order?: number
+          title?: string
+          type?: string
+          updated_at?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
+      promo_templates: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          duration: number
+          id: string
+          is_default: boolean | null
+          name: string
+          platform: string
+          template_url: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          duration: number
+          id?: string
+          is_default?: boolean | null
+          name: string
+          platform: string
+          template_url: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          duration?: number
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          platform?: string
+          template_url?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: Json
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: Json
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
+      social_promos: {
+        Row: {
+          created_at: string | null
+          id: string
+          platform: string
+          status: string
+          thumbnail_url: string | null
+          track_id: string | null
+          updated_at: string | null
+          video_url: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          platform: string
+          status?: string
+          thumbnail_url?: string | null
+          track_id?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          platform?: string
+          status?: string
+          thumbnail_url?: string | null
+          track_id?: string | null
+          updated_at?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_promos_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracks: {
+        Row: {
+          artist: string
+          cover_art_url: string | null
+          created_at: string | null
+          description: string | null
+          duration: number | null
+          full_track_url: string | null
+          genre: string | null
+          id: string
+          minimum_donation: number | null
+          release_date: string | null
+          sample_url: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          artist: string
+          cover_art_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration?: number | null
+          full_track_url?: string | null
+          genre?: string | null
+          id?: string
+          minimum_donation?: number | null
+          release_date?: string | null
+          sample_url?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          artist?: string
+          cover_art_url?: string | null
+          created_at?: string | null
+          description?: string | null
+          duration?: number | null
+          full_track_url?: string | null
+          genre?: string | null
+          id?: string
+          minimum_donation?: number | null
+          release_date?: string | null
+          sample_url?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
