@@ -1,8 +1,8 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import * as elevenLabsService from '@/services/elevenLabsService';
 import * as browserVoiceService from '@/services/browserVoiceService';
-import '../types/speech-recognition.d.ts';
 
 // Debug logging function that always logs regardless of environment
 const debugLog = (...args: any[]) => {
