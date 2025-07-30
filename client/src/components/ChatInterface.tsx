@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
+import { runAgentElohim, checkAgentElohimHealth } from '@/services/agentElohimService';
 
 interface Message {
   id: string;
@@ -18,12 +19,13 @@ const ChatInterface: React.FC = () => {
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I\'m Agent Elohim, your AI assistant. How can I help you today?',
+      content: 'Hello! I\'m Agent Elohim, your AI assistant powered by Mistral 4B Instruct. How can I help you today?',
       timestamp: new Date()
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [vpsConnected, setVpsConnected] = useState<boolean | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -39,6 +41,18 @@ const ChatInterface: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    // Check VPS connection on component mount
+    const checkConnection = async () => {
+      const isConnected = await checkAgentElohimHealth();
+      setVpsConnected(isConnected);
+      if (!isConnected) {
+        toast.error('VPS connection unavailable - using fallback mode');
+      }
+    };
+    checkConnection();
+  }, []);
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -50,26 +64,18 @@ const ChatInterface: React.FC = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const userInput = input;
     setInput('');
     setIsLoading(true);
 
     try {
-      // Mock AI response - in real app, this would call the API
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
-      
-      const responses = [
-        "I understand your question. Let me help you with that.",
-        "That's an interesting point. Here's what I think about it...",
-        "I can definitely assist you with that task.",
-        "Let me analyze this for you and provide a comprehensive response.",
-        "Based on my understanding, here's what I would recommend..."
-      ];
+      // Call Agent Elohim VPS
+      const agentReply = await runAgentElohim(userInput);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: responses[Math.floor(Math.random() * responses.length)] + " " + 
-                "This is a demo response. In the full application, this would connect to your AI backend.",
+        content: agentReply,
         timestamp: new Date()
       };
 
@@ -91,9 +97,26 @@ const ChatInterface: React.FC = () => {
   return (
     <Card className="h-[600px] flex flex-col">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Bot className="h-5 w-5" />
-          Agent Elohim
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Bot className="h-5 w-5" />
+            Agent Elohim
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            {vpsConnected === null ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : vpsConnected ? (
+              <div className="flex items-center gap-1 text-green-600">
+                <Wifi className="h-4 w-4" />
+                <span>VPS Connected</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1 text-red-600">
+                <WifiOff className="h-4 w-4" />
+                <span>VPS Offline</span>
+              </div>
+            )}
+          </div>
         </CardTitle>
       </CardHeader>
       
