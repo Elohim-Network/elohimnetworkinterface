@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { runAgentElohim, checkAgentElohimHealth } from '@/services/agentElohimService';
 import { toast } from 'sonner';
+import DemoModeNotice from './DemoModeNotice';
 
 const AgentElohimDashboard: React.FC = () => {
   const [vpsStatus, setVpsStatus] = useState<'checking' | 'online' | 'offline'>('checking');
@@ -105,9 +106,16 @@ const AgentElohimDashboard: React.FC = () => {
       
       setLastResponse(response);
       setResponseTime(endTime - startTime);
-      setVpsStatus('online');
       
-      toast.success('AI response test successful');
+      // Check if response contains VPS content or fallback content
+      if (response.includes("VPS connection") || response.includes("being established")) {
+        setVpsStatus('offline');
+        toast.warning('Using local AI fallback - VPS connection unavailable');
+      } else {
+        setVpsStatus('online');
+        toast.success('AI response test successful');
+      }
+      
     } catch (error) {
       setVpsStatus('offline');
       toast.error('AI response test failed');
@@ -137,6 +145,8 @@ const AgentElohimDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <DemoModeNotice isConnected={vpsStatus === 'online'} />
+      
       {/* Main Status Card */}
       <Card className="border-2 border-dashed border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950 dark:to-amber-950">
         <CardHeader>

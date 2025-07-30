@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Send, Bot, User, Loader2, Wifi, WifiOff } from 'lucide-react';
 import { toast } from 'sonner';
+import DemoModeNotice from './DemoModeNotice';
 import { runAgentElohim, checkAgentElohimHealth } from '@/services/agentElohimService';
 
 interface Message {
@@ -81,7 +82,9 @@ const ChatInterface: React.FC = () => {
 
       setMessages(prev => [...prev, aiMessage]);
     } catch (error) {
-      toast.error('Failed to send message. Please try again.');
+      console.error('Chat error:', error);
+      // Show fallback message since runAgentElohim already handles VPS failures
+      toast.warning('Using local AI fallback - VPS connection issues');
     } finally {
       setIsLoading(false);
     }
@@ -95,8 +98,11 @@ const ChatInterface: React.FC = () => {
   };
 
   return (
-    <Card className="h-[600px] flex flex-col">
-      <CardHeader>
+    <div className="space-y-4">
+      <DemoModeNotice isConnected={vpsConnected === true} />
+      
+      <Card className="h-[600px] flex flex-col">
+        <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Bot className="h-5 w-5" />
@@ -192,6 +198,7 @@ const ChatInterface: React.FC = () => {
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 };
 
