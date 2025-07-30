@@ -3,10 +3,13 @@ import React, { useEffect, useState } from 'react';
 import ChatInterface from '@/components/ChatInterface';
 import BusinessTools from '@/components/BusinessTools';
 import JukeboxHero from '@/components/JukeboxHero';
+import AIContentGenerator from '@/components/AIContentGenerator';
+import AIImageGenerator from '@/components/AIImageGenerator';
+import AIVoiceChat from '@/components/AIVoiceChat';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { ArrowLeft, ShoppingCart, AlertCircle, Music, Settings, Cpu } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, AlertCircle, Music, Settings, Cpu, FileText, Image, Mic } from 'lucide-react';
 import { Link } from 'wouter';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { useExitIntent } from '@/hooks/useExitIntent';
@@ -21,7 +24,7 @@ const API_ENDPOINTS = {
 };
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<'chat' | 'tools' | 'jukebox' | 'connections' | 'local-chat'>('chat');
+  const [activeView, setActiveView] = useState<'chat' | 'tools' | 'jukebox' | 'connections' | 'local-chat' | 'content' | 'images' | 'voice'>('chat');
   const [backendStatus, setBackendStatus] = useState<{
     mistral: 'unknown' | 'connected' | 'disconnected';
     stableDiffusion: 'unknown' | 'connected' | 'disconnected';
@@ -215,25 +218,37 @@ const Index = () => {
               } else if (value === 'jukebox') {
                 handleJukeboxClick();
               } else {
-                setActiveView(value as 'chat' | 'tools' | 'jukebox' | 'connections' | 'local-chat');
+                setActiveView(value as 'chat' | 'tools' | 'jukebox' | 'connections' | 'local-chat' | 'content' | 'images' | 'voice');
               }
             }}
             className="w-auto"
           >
-            <TabsList>
-              <TabsTrigger value="chat">Chat Interface</TabsTrigger>
-              <TabsTrigger value="tools">Business Tools</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-8">
+              <TabsTrigger value="chat">Chat</TabsTrigger>
+              <TabsTrigger value="tools">Business</TabsTrigger>
+              <TabsTrigger value="content" className="flex items-center gap-1">
+                <FileText className="h-4 w-4" />
+                Content
+              </TabsTrigger>
+              <TabsTrigger value="images" className="flex items-center gap-1">
+                <Image className="h-4 w-4" />
+                Images
+              </TabsTrigger>
+              <TabsTrigger value="voice" className="flex items-center gap-1">
+                <Mic className="h-4 w-4" />
+                Voice
+              </TabsTrigger>
               <TabsTrigger value="jukebox" className="flex items-center gap-1">
                 <Music className="h-4 w-4" />
-                Jukebox Hero
+                Music
               </TabsTrigger>
               <TabsTrigger value="local-chat" className="flex items-center gap-1">
                 <Cpu className="h-4 w-4" />
-                Local LLM
+                Local
               </TabsTrigger>
               <TabsTrigger value="connections" className="flex items-center gap-1">
                 <Settings className="h-4 w-4" />
-                Connections
+                Settings
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -252,14 +267,20 @@ const Index = () => {
         </div>
         
         <div className="flex-1 overflow-hidden">
-          {activeView === 'chat' ? (
-            <ChatInterface />
-          ) : activeView === 'tools' ? (
-            <BusinessTools />
-          ) : activeView === 'local-chat' ? (
-            <LocalChat />
-          ) : activeView === 'connections' ? (
-            <div className="p-6 overflow-auto h-full">
+          <div className="p-6 overflow-auto h-full">
+            {activeView === 'chat' ? (
+              <ChatInterface />
+            ) : activeView === 'tools' ? (
+              <BusinessTools />
+            ) : activeView === 'content' ? (
+              <AIContentGenerator />
+            ) : activeView === 'images' ? (
+              <AIImageGenerator />
+            ) : activeView === 'voice' ? (
+              <AIVoiceChat />
+            ) : activeView === 'local-chat' ? (
+              <LocalChat />
+            ) : activeView === 'connections' ? (
               <div className="max-w-3xl mx-auto">
                 <h1 className="text-2xl font-bold mb-6">Connection Settings</h1>
                 <p className="mb-6 text-muted-foreground">
@@ -267,12 +288,10 @@ const Index = () => {
                 </p>
                 <ConnectionTester />
               </div>
-            </div>
-          ) : (
-            <div className="p-6 overflow-auto h-full">
+            ) : (
               <JukeboxHero />
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
       
