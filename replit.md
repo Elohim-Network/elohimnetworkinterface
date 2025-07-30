@@ -47,10 +47,17 @@ Agent Elohim is a comprehensive AI assistant platform that has been successfully
 - Dark theme is the default interface theme
 
 ## Development Notes
-- Uses in-memory storage (MemStorage) for demo purposes
+- Database setup ready - uses PostgreSQL with Drizzle ORM when DATABASE_URL is available
+- Falls back to in-memory storage (MemStorage) when no database is configured
 - All AI services have mock implementations for demonstration
 - Real integrations can be enabled by providing appropriate API keys
 - The application is designed for easy deployment on Replit
+
+## Database Setup
+The application supports both PostgreSQL and in-memory storage:
+- **With Database**: Automatically uses PostgreSQL when DATABASE_URL environment variable is set
+- **Without Database**: Falls back to in-memory storage for development/demo purposes
+- To add a database, create a PostgreSQL database in Replit and the app will automatically detect and use it
 
 ## Next Steps
 - Application is ready for use and further development
