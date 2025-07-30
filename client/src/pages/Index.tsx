@@ -6,10 +6,11 @@ import JukeboxHero from '@/components/JukeboxHero';
 import AIContentGenerator from '@/components/AIContentGenerator';
 import AIImageGenerator from '@/components/AIImageGenerator';
 import AIVoiceChat from '@/components/AIVoiceChat';
+import AgentElohimDashboard from '@/components/AgentElohimDashboard';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { ArrowLeft, ShoppingCart, AlertCircle, Music, Settings, Cpu, FileText, Image, Mic } from 'lucide-react';
+import { ArrowLeft, ShoppingCart, AlertCircle, Music, Settings, Cpu, FileText, Image, Mic, Crown } from 'lucide-react';
 import { Link } from 'wouter';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { useExitIntent } from '@/hooks/useExitIntent';
@@ -24,7 +25,7 @@ const API_ENDPOINTS = {
 };
 
 const Index = () => {
-  const [activeView, setActiveView] = useState<'chat' | 'tools' | 'jukebox' | 'connections' | 'local-chat' | 'content' | 'images' | 'voice'>('chat');
+  const [activeView, setActiveView] = useState<'dashboard' | 'chat' | 'tools' | 'jukebox' | 'connections' | 'local-chat' | 'content' | 'images' | 'voice'>('dashboard');
   const [backendStatus, setBackendStatus] = useState<{
     mistral: 'unknown' | 'connected' | 'disconnected';
     stableDiffusion: 'unknown' | 'connected' | 'disconnected';
@@ -218,12 +219,16 @@ const Index = () => {
               } else if (value === 'jukebox') {
                 handleJukeboxClick();
               } else {
-                setActiveView(value as 'chat' | 'tools' | 'jukebox' | 'connections' | 'local-chat' | 'content' | 'images' | 'voice');
+                setActiveView(value as 'dashboard' | 'chat' | 'tools' | 'jukebox' | 'connections' | 'local-chat' | 'content' | 'images' | 'voice');
               }
             }}
             className="w-auto"
           >
-            <TabsList className="grid w-full grid-cols-8">
+            <TabsList className="grid w-full grid-cols-9">
+              <TabsTrigger value="dashboard" className="flex items-center gap-1">
+                <Crown className="h-4 w-4" />
+                Elohim
+              </TabsTrigger>
               <TabsTrigger value="chat">Chat</TabsTrigger>
               <TabsTrigger value="tools">Business</TabsTrigger>
               <TabsTrigger value="content" className="flex items-center gap-1">
@@ -268,7 +273,9 @@ const Index = () => {
         
         <div className="flex-1 overflow-hidden">
           <div className="p-6 overflow-auto h-full">
-            {activeView === 'chat' ? (
+            {activeView === 'dashboard' ? (
+              <AgentElohimDashboard />
+            ) : activeView === 'chat' ? (
               <ChatInterface />
             ) : activeView === 'tools' ? (
               <BusinessTools />

@@ -66,7 +66,7 @@ const ConnectionTester: React.FC = () => {
       
       // Add auth for Agent Elohim endpoints
       if (service === 'mistral' || service === 'voice' || service === 'speech') {
-        headers['Authorization'] = 'Bearer elohim-core';
+        headers['Authorization'] = 'Bearer fuPRVYCaxDpnlR03nUojV1umTfS3zjpLIaoSAuoY35e337a5';
       }
       
       const response = await fetch(url, { method, headers });

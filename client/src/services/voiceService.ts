@@ -44,7 +44,7 @@ export class VoiceService {
       const response = await fetch('http://178.16.143.5:3000/voice', {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer elohim-core'
+          'Authorization': 'Bearer fuPRVYCaxDpnlR03nUojV1umTfS3zjpLIaoSAuoY35e337a5'
         },
         body: formData
       });
@@ -67,7 +67,7 @@ export class VoiceService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer elohim-core'
+          'Authorization': 'Bearer fuPRVYCaxDpnlR03nUojV1umTfS3zjpLIaoSAuoY35e337a5'
         },
         body: JSON.stringify({ text })
       });

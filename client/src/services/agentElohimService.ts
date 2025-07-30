@@ -7,7 +7,7 @@ export async function runAgentElohim(input: string): Promise<string> {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
-        "Authorization": "Bearer elohim-core"
+        "Authorization": "Bearer fuPRVYCaxDpnlR03nUojV1umTfS3zjpLIaoSAuoY35e337a5"
       },
       body: JSON.stringify({ input })
     });
