@@ -1,84 +1,65 @@
-
-import React, { useEffect } from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Flame, XIcon } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { X, Gift } from 'lucide-react';
 
 interface ExitIntentPopupProps {
-  onClose: () => void;
+  isOpen: boolean;
   onAccept: () => void;
+  onClose: () => void;
 }
 
-const ExitIntentPopup: React.FC<ExitIntentPopupProps> = ({ onClose, onAccept }) => {
-  // Prevent scrolling when popup is shown
-  useEffect(() => {
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, []);
+const ExitIntentPopup: React.FC<ExitIntentPopupProps> = ({ isOpen, onAccept, onClose }) => {
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-      <Card className="w-full max-w-lg animate-scale-in">
-        <CardHeader className="relative">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-2 top-2" 
-            onClick={onClose}
-          >
-            <XIcon className="h-4 w-4" />
-          </Button>
-          <CardTitle className="text-center text-xl font-bold text-primary">
-            WAIT! What if this moment is the breakthrough you've been waiting for?
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-center space-y-4">
-          <p>You didn't find Elohim by accident.</p>
-          <p>This isn't just another AI system…</p>
-          <p>This is the first fully autonomous agent built with a divine mission—to generate income, transform lives, and guide you in real-time.</p>
-          
-          <div className="my-4">
-            <p>Before you go, grab this 100% free starter agent—no credit card, no commitment.</p>
-            <p>Let it prove itself.</p>
-            <p>Let Elohim work for YOU.</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <Card className="w-full max-w-md mx-4 relative">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute right-2 top-2"
+          onClick={onClose}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+        
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <Gift className="h-6 w-6 text-primary" />
           </div>
-          
-          <ul className="space-y-2 text-left mx-auto w-fit">
+          <CardTitle>Wait! Don't leave yet!</CardTitle>
+          <CardDescription>
+            Get a free AI agent to help with your projects
+          </CardDescription>
+        </CardHeader>
+        
+        <CardContent className="text-center">
+          <p className="text-sm text-muted-foreground mb-4">
+            Join thousands of users who are already using Agent Elohim to boost their productivity.
+          </p>
+          <ul className="text-sm space-y-2 text-left">
             <li className="flex items-center gap-2">
-              <span className="text-green-500">✅</span>
-              <span>AI-powered income generator</span>
+              ✓ Advanced AI conversations
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-green-500">✅</span>
-              <span>Lifetime-free access to your first agent</span>
+              ✓ Image generation capabilities
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-green-500">✅</span>
-              <span>Limited-time bonuses for first 100 signups</span>
+              ✓ Business tools and analytics
+            </li>
+            <li className="flex items-center gap-2">
+              ✓ Free to get started
             </li>
           </ul>
-          
-          <p className="italic mt-4">
-            Your future self might look back at this click and say,
-            <br />
-            "That was the moment everything changed."
-          </p>
         </CardContent>
-        <CardFooter className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button 
-            className="w-full sm:w-auto flex items-center gap-2" 
-            onClick={onAccept}
-          >
-            <Flame className="h-4 w-4" /> Yes, Activate My Free Agent
+        
+        <CardFooter className="flex gap-2">
+          <Button variant="outline" onClick={onClose} className="flex-1">
+            No, thanks
           </Button>
-          <Button 
-            variant="outline" 
-            className="w-full sm:w-auto" 
-            onClick={onClose}
-          >
-            🙈 No Thanks, I'll Pass on the Opportunity
+          <Button onClick={onAccept} className="flex-1">
+            Get Free Agent
           </Button>
         </CardFooter>
       </Card>

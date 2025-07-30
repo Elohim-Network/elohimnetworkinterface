@@ -1,9 +1,45 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { OllamaRequest, OllamaResponse } from '@/types/chat';
-import { detectLlmBackend } from '@/services/ai/utils';
-import { getConfig } from '@/services/ai/config';
-import { ProviderType } from '@/services/ai/types';
+// Local AI service for direct connections without external dependencies
+interface OllamaRequest {
+  model: string;
+  prompt: string;
+  system?: string;
+  options?: {
+    temperature?: number;
+  };
+}
+
+interface OllamaResponse {
+  response: string;
+}
+
+const getConfig = () => {
+  const savedConfig = localStorage.getItem('local-ai-config');
+  if (savedConfig) {
+    try {
+      return JSON.parse(savedConfig);
+    } catch (e) {
+      console.error('Error parsing saved config:', e);
+    }
+  }
+  
+  return {
+    mistralUrl: 'http://127.0.0.1:11434',
+    stableDiffusionUrl: 'http://127.0.0.1:8188',
+    mistralModel: 'mistral-7b-instruct',
+    sdModel: 'stable-diffusion-v1-5'
+  };
+};
+
+const detectLlmBackend = (url: string) => {
+  if (url.includes('11434') || url.includes('ollama')) {
+    return 'ollama';
+  }
+  if (url.includes('/api/generate')) {
+    return 'api-generate';
+  }
+  return 'openai-compatible';
+};
 
 export const ollamaService = {
   async generateResponse(model: string, prompt: string, systemPrompt?: string): Promise<string> {
@@ -40,19 +76,8 @@ export const ollamaService = {
         } catch (localError) {
           console.error('Error connecting directly to Ollama:', localError);
           
-          // Fall back to Edge Function if direct connection fails
-          console.log('Falling back to Edge Function...');
-          const { data, error } = await supabase.functions.invoke('local-llm-proxy', {
-            body: request,
-          });
-
-          if (error) {
-            console.error('Error calling Ollama via Edge Function:', error);
-            throw new Error(`Failed to generate response: ${error.message}`);
-          }
-
-          const response = data as OllamaResponse;
-          return response.response;
+          // Local connection failed
+          throw new Error('Cannot connect to local AI service. Please ensure Ollama is running.');
         }
       }
 

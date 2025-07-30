@@ -2,11 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import ChatInterface from '@/components/ChatInterface';
 import BusinessTools from '@/components/BusinessTools';
+import JukeboxHero from '@/components/JukeboxHero';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { ArrowLeft, ShoppingCart, AlertCircle, Music, Settings, Cpu } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from 'wouter';
 import ExitIntentPopup from '@/components/ExitIntentPopup';
 import { useExitIntent } from '@/hooks/useExitIntent';
 import ConnectionStatus from '@/components/ConnectionStatus';
@@ -238,7 +239,8 @@ const Index = () => {
           </Tabs>
           
           <div className="flex items-center gap-2">
-            <ConnectionStatus status={backendStatus} />
+            <ConnectionStatus status={backendStatus.mistral} service="Mistral" />
+            <ConnectionStatus status={backendStatus.stableDiffusion} service="SD" />
             <Link to="/marketplace">
               <Button variant="outline" size="sm" className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4" />
@@ -267,18 +269,18 @@ const Index = () => {
               </div>
             </div>
           ) : (
-            <iframe 
-              src="/jukebox" 
-              className="w-full h-full border-none"
-              title="Jukebox Hero"
-            />
+            <div className="p-6 overflow-auto h-full">
+              <JukeboxHero />
+            </div>
           )}
         </div>
       </div>
       
-      {showExitIntent && (
-        <ExitIntentPopup onClose={closeExitIntent} onAccept={handleAcceptOffer} />
-      )}
+      <ExitIntentPopup 
+        isOpen={showExitIntent}
+        onClose={closeExitIntent} 
+        onAccept={handleAcceptOffer} 
+      />
     </div>
   );
 };

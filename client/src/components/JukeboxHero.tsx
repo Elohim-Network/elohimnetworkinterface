@@ -1,344 +1,328 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { JukeboxTrack, ContentDeploymentSettings } from '@/types/modules';
-import JukeboxUploader from './JukeboxUploader';
-import JukeboxTrackList from './JukeboxTrackList';
-import JukeboxTrackDetail from './JukeboxTrackDetail';
-import JukeboxCampaigns from './JukeboxCampaigns';
-import JukeboxAnalytics from './JukeboxAnalytics';
-import JukeboxSettings from './JukeboxSettings';
-import JukeboxPlayer from './JukeboxPlayer';
-import JukeboxSalesPage from './JukeboxSalesPage';
+import { 
+  Play, 
+  Pause, 
+  SkipForward, 
+  SkipBack, 
+  Volume2, 
+  Shuffle, 
+  Repeat,
+  Music,
+  Search,
+  Heart,
+  Share
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { useModules } from '@/hooks/useModules';
 
-// Mock data - would be replaced with actual data from backend
-const MOCK_TRACKS: JukeboxTrack[] = [
-  {
-    id: '1',
-    title: 'Kingdom Coming',
-    artist: 'Elohim Network',
-    audioUrl: '/placeholder.mp3',
-    coverImageUrl: '/placeholder.svg',
-    duration: 237,
-    tags: ['worship', 'prophetic', 'kingdom'],
-    emotionalPoints: [
-      { timestamp: 45, emotion: 'joy', intensity: 0.8 },
-      { timestamp: 120, emotion: 'awe', intensity: 0.9 }
-    ],
-    viralClipPoints: [
-      { startTime: 42, endTime: 57, strength: 0.85, caption: "When His kingdom comes..." },
-      { startTime: 118, endTime: 133, strength: 0.9, caption: "Declaring His glory..." }
-    ],
-    campaigns: [
-      { id: 'c1', platform: 'tiktok', status: 'published', publishedAt: '2024-04-01T12:00:00Z', reach: 12500, plays: 8700, engagement: 1450, videoUrl: 'https://example.com/video1' },
-      { id: 'c2', platform: 'instagram', status: 'scheduled', scheduledFor: '2024-04-05T15:30:00Z' }
-    ],
-    donations: [
-      { id: 'd1', amount: 25, currency: 'USD', timestamp: '2024-04-01T14:23:00Z', donorName: 'Grace W.', message: 'This song touched my heart!' },
-      { id: 'd2', amount: 10, currency: 'USD', timestamp: '2024-04-02T09:11:00Z' }
-    ],
-    createdAt: '2024-03-25T10:00:00Z',
-    updatedAt: '2024-04-02T15:00:00Z'
-  },
-  {
-    id: '2',
-    title: 'Prepare the Way',
-    artist: 'Elohim Sound',
-    audioUrl: '/placeholder.mp3',
-    coverImageUrl: '/placeholder.svg',
-    duration: 195,
-    tags: ['prophetic', 'declaration', 'revival'],
-    emotionalPoints: [
-      { timestamp: 30, emotion: 'determination', intensity: 0.75 },
-      { timestamp: 90, emotion: 'hope', intensity: 0.95 }
-    ],
-    viralClipPoints: [
-      { startTime: 28, endTime: 43, strength: 0.8, caption: "Preparing the way..." }
-    ],
-    campaigns: [
-      { id: 'c3', platform: 'youtube', status: 'published', publishedAt: '2024-03-28T12:00:00Z', reach: 8200, plays: 5100, engagement: 920, videoUrl: 'https://example.com/video2' }
-    ],
-    donations: [
-      { id: 'd3', amount: 15, currency: 'USD', timestamp: '2024-03-29T18:45:00Z', donorName: 'Daniel R.' }
-    ],
-    createdAt: '2024-03-20T09:30:00Z',
-    updatedAt: '2024-03-29T19:00:00Z'
-  }
-];
-
-const MOCK_SETTINGS: ContentDeploymentSettings = {
-  platforms: [
-    { platform: 'tiktok', enabled: true, accountId: 'elohimnetwork' },
-    { platform: 'instagram', enabled: true, accountId: 'elohim.network' },
-    { platform: 'youtube', enabled: true, accountId: 'ElohimNetwork' },
-    { platform: 'facebook', enabled: false },
-    { platform: 'x', enabled: true, accountId: 'ElohimNetwork' }
-  ],
-  captionTemplates: [
-    "Experience the sound that's preparing the way for His return. #SOUND_TAG #EMOTION_TAG",
-    "This is what the pre-second coming movement sounds like. #SOUND_TAG #EMOTION_TAG"
-  ],
-  hashtagSets: [
-    ['#kingdomsound', '#prophetic', '#worship'],
-    ['#jesusmusic', '#kingdomcome', '#soundmovement']
-  ],
-  ctaTemplates: [
-    "Support this ministry and unlock the full track at jukeboxhero.elohimnetwork.com",
-    "Donate any amount to unlock the full Kingdom sound experience!"
-  ],
-  schedulePreferences: {
-    bestTimeOfDay: [9, 12, 18, 20],
-    daysOfWeek: [true, false, true, false, true, true, false],
-    frequency: 3
-  }
-};
+interface Track {
+  id: string;
+  title: string;
+  artist: string;
+  duration: string;
+  genre: string;
+  isLiked: boolean;
+}
 
 const JukeboxHero: React.FC = () => {
-  const [tracks, setTracks] = useState<JukeboxTrack[]>(MOCK_TRACKS);
-  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
-  const [deploymentSettings, setDeploymentSettings] = useState<ContentDeploymentSettings>(MOCK_SETTINGS);
-  const [currentTab, setCurrentTab] = useState('tracks');
-  const [currentlyPlaying, setCurrentlyPlaying] = useState<JukeboxTrack | null>(null);
-  const [isWhiteLabeled, setIsWhiteLabeled] = useState(false);
-  const { isAdminUser } = useModules();
-  
-  const selectedTrack = selectedTrackId 
-    ? tracks.find(track => track.id === selectedTrackId) 
-    : null;
-  
-  const handleTrackUpload = async (track: Omit<JukeboxTrack, 'id' | 'createdAt' | 'updatedAt' | 'campaigns' | 'donations' | 'emotionalPoints' | 'viralClipPoints'>) => {
-    try {
-      // In a real implementation, this would call an API to upload and process the track
-      const newTrack: JukeboxTrack = {
-        ...track,
-        id: `track-${Date.now()}`,
-        campaigns: [],
-        donations: [],
-        emotionalPoints: [],
-        viralClipPoints: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      setTracks(prev => [newTrack, ...prev]);
-      setSelectedTrackId(newTrack.id);
-      setCurrentTab('detail');
-      toast.success('Track uploaded successfully! AI analysis in progress...');
-      
-      // Simulate AI analysis completion after a delay
-      setTimeout(() => {
-        setTracks(prev => 
-          prev.map(t => 
-            t.id === newTrack.id 
-              ? {
-                  ...t,
-                  emotionalPoints: [
-                    { timestamp: Math.floor(t.duration * 0.2), emotion: 'joy', intensity: 0.8 },
-                    { timestamp: Math.floor(t.duration * 0.5), emotion: 'awe', intensity: 0.9 }
-                  ],
-                  viralClipPoints: [
-                    { startTime: Math.floor(t.duration * 0.18), endTime: Math.floor(t.duration * 0.25), strength: 0.85, caption: "Generated caption for viral moment..." }
-                  ],
-                }
-              : t
-          )
-        );
-        toast.success('AI analysis complete! Viral points identified.');
-      }, 3000);
-      
-    } catch (error) {
-      console.error('Error uploading track:', error);
-      toast.error('Failed to upload track. Please try again.');
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
+  const [volume, setVolume] = useState([75]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isShuffleOn, setIsShuffleOn] = useState(false);
+  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
+
+  const [tracks] = useState<Track[]>([
+    {
+      id: '1',
+      title: 'Digital Dreams',
+      artist: 'AI Symphony',
+      duration: '3:42',
+      genre: 'Electronic',
+      isLiked: true
+    },
+    {
+      id: '2',
+      title: 'Quantum Melodies',
+      artist: 'Neural Network',
+      duration: '4:15',
+      genre: 'Ambient',
+      isLiked: false
+    },
+    {
+      id: '3',
+      title: 'Binary Beats',
+      artist: 'Algorithm Artist',
+      duration: '3:28',
+      genre: 'Techno',
+      isLiked: true
+    },
+    {
+      id: '4',
+      title: 'Synthesized Soul',
+      artist: 'Deep Learning',
+      duration: '5:03',
+      genre: 'Jazz Fusion',
+      isLiked: false
+    }
+  ]);
+
+  const [playlists] = useState([
+    { id: '1', name: 'AI Favorites', trackCount: 12 },
+    { id: '2', name: 'Coding Sessions', trackCount: 8 },
+    { id: '3', name: 'Relaxing Algorithms', trackCount: 15 }
+  ]);
+
+  const playTrack = (track: Track) => {
+    setCurrentTrack(track);
+    setIsPlaying(true);
+    toast.success(`Now playing: ${track.title} by ${track.artist}`);
+  };
+
+  const togglePlayPause = () => {
+    setIsPlaying(!isPlaying);
+    if (currentTrack) {
+      toast.info(isPlaying ? 'Music paused' : 'Music resumed');
     }
   };
 
-  const handleGenerateContent = async (trackId: string) => {
-    try {
-      toast.loading('Generating content across platforms...');
-      
-      // Simulate content generation completion after a delay
-      setTimeout(() => {
-        setTracks(prev => 
-          prev.map(t => 
-            t.id === trackId 
-              ? {
-                  ...t,
-                  campaigns: [
-                    ...t.campaigns,
-                    {
-                      id: `campaign-${Date.now()}`,
-                      platform: 'tiktok',
-                      status: 'scheduled',
-                      scheduledFor: new Date(Date.now() + 3600000).toISOString(),
-                    },
-                    {
-                      id: `campaign-${Date.now() + 1}`,
-                      platform: 'instagram',
-                      status: 'scheduled',
-                      scheduledFor: new Date(Date.now() + 7200000).toISOString(),
-                    }
-                  ]
-                }
-              : t
-          )
-        );
-        toast.success('Content generated and scheduled successfully!');
-        setCurrentTab('campaigns');
-      }, 2500);
-      
-    } catch (error) {
-      console.error('Error generating content:', error);
-      toast.error('Failed to generate content. Please try again.');
+  const toggleLike = (trackId: string) => {
+    const track = tracks.find(t => t.id === trackId);
+    if (track) {
+      track.isLiked = !track.isLiked;
+      toast.success(track.isLiked ? 'Added to favorites' : 'Removed from favorites');
     }
   };
-  
-  const handlePlayTrack = (track: JukeboxTrack) => {
-    setCurrentlyPlaying(track);
+
+  const shareTrack = (track: Track) => {
+    navigator.clipboard.writeText(`Check out ${track.title} by ${track.artist}!`);
+    toast.success('Track info copied to clipboard');
   };
-  
-  const handleStopPlaying = () => {
-    setCurrentlyPlaying(null);
-  };
-  
-  const handleUpdateSettings = (newSettings: ContentDeploymentSettings) => {
-    setDeploymentSettings(newSettings);
-    toast.success('Settings updated successfully!');
-  };
-  
-  const handleToggleWhiteLabel = () => {
-    setIsWhiteLabeled(prev => !prev);
-    toast.success(isWhiteLabeled ? 'Elohim Network branding restored' : 'White label mode activated');
-  };
-  
-  // Check if user has permission to use this module
-  useEffect(() => {
-    if (!isAdminUser()) {
-      toast.info("Jukebox Hero requires admin access or the Music Creator module");
-    }
-  }, [isAdminUser]);
-  
+
+  const filteredTracks = tracks.filter(track =>
+    track.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    track.artist.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    track.genre.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
-    <div className="h-full flex flex-col">
-      <div className="flex items-center justify-between p-4 border-b">
-        <div className="flex items-center gap-2">
-          {!isWhiteLabeled && <span className="text-xl font-bold text-primary">Jukebox Hero</span>}
-          {isWhiteLabeled && <span className="text-xl font-bold text-primary">Music Creator Studio</span>}
-          <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">Creator Edition</span>
-        </div>
-        
-        {isAdminUser() && (
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={handleToggleWhiteLabel}
-              className="text-xs text-muted-foreground hover:text-primary"
-            >
-              {isWhiteLabeled ? 'Restore Elohim Branding' : 'Activate White Label Mode'}
-            </button>
-          </div>
-        )}
-      </div>
-      
-      <div className="flex-1 overflow-hidden">
-        <Tabs 
-          value={currentTab} 
-          onValueChange={setCurrentTab} 
-          className="h-full flex flex-col"
-        >
-          <div className="px-4 pt-2">
-            <TabsList className="w-full justify-start">
-              <TabsTrigger value="tracks">My Tracks</TabsTrigger>
-              <TabsTrigger value="upload">Upload</TabsTrigger>
-              {selectedTrackId && <TabsTrigger value="detail">Track Details</TabsTrigger>}
-              <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              {isAdminUser() && <TabsTrigger value="settings">Settings</TabsTrigger>}
-              {isAdminUser() && <TabsTrigger value="sales">Sales Page</TabsTrigger>}
-            </TabsList>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto p-4">
-            <TabsContent value="tracks" className="h-full m-0">
-              <JukeboxTrackList 
-                tracks={tracks}
-                onSelectTrack={(id) => {
-                  setSelectedTrackId(id);
-                  setCurrentTab('detail');
-                }}
-                onPlayTrack={handlePlayTrack}
-                isAdmin={isAdminUser()}
+    <div className="space-y-6">
+      {/* Now Playing */}
+      {currentTrack && (
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">{currentTrack.title}</h3>
+                <p className="text-muted-foreground">{currentTrack.artist}</p>
+              </div>
+              <Badge variant="secondary">{currentTrack.genre}</Badge>
+            </div>
+            
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <Button variant="ghost" size="icon" onClick={() => setIsShuffleOn(!isShuffleOn)}>
+                <Shuffle className={`h-4 w-4 ${isShuffleOn ? 'text-primary' : ''}`} />
+              </Button>
+              <Button variant="ghost" size="icon">
+                <SkipBack className="h-4 w-4" />
+              </Button>
+              <Button size="icon" onClick={togglePlayPause}>
+                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              </Button>
+              <Button variant="ghost" size="icon">
+                <SkipForward className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setRepeatMode(repeatMode === 'off' ? 'all' : repeatMode === 'all' ? 'one' : 'off')}
+              >
+                <Repeat className={`h-4 w-4 ${repeatMode !== 'off' ? 'text-primary' : ''}`} />
+              </Button>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Volume2 className="h-4 w-4" />
+              <Slider
+                value={volume}
+                onValueChange={setVolume}
+                max={100}
+                step={1}
+                className="flex-1"
               />
-            </TabsContent>
-            
-            <TabsContent value="upload" className="h-full m-0">
-              <JukeboxUploader 
-                onUploadComplete={handleTrackUpload}
-                isAdmin={isAdminUser()}
-              />
-            </TabsContent>
-            
-            <TabsContent value="detail" className="h-full m-0">
-              {selectedTrack ? (
-                <JukeboxTrackDetail 
-                  track={selectedTrack}
-                  onPlay={() => handlePlayTrack(selectedTrack)}
-                  onGenerateContent={() => handleGenerateContent(selectedTrack.id)}
-                  isAdmin={isAdminUser()}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <p className="text-muted-foreground">Select a track to view details</p>
-                </div>
-              )}
-            </TabsContent>
-            
-            <TabsContent value="campaigns" className="h-full m-0">
-              <JukeboxCampaigns 
-                tracks={tracks}
-                selectedTrackId={selectedTrackId}
-                onSelectTrack={setSelectedTrackId}
-                isAdmin={isAdminUser()}
-              />
-            </TabsContent>
-            
-            <TabsContent value="analytics" className="h-full m-0">
-              <JukeboxAnalytics 
-                tracks={tracks}
-                isAdmin={isAdminUser()}
-              />
-            </TabsContent>
-            
-            <TabsContent value="settings" className="h-full m-0">
-              {isAdminUser() && (
-                <JukeboxSettings 
-                  settings={deploymentSettings} 
-                  onUpdateSettings={handleUpdateSettings}
-                  onToggleWhiteLabel={handleToggleWhiteLabel}
-                  isWhiteLabeled={isWhiteLabeled}
-                />
-              )}
-            </TabsContent>
-            
-            <TabsContent value="sales" className="h-full m-0">
-              {isAdminUser() && (
-                <JukeboxSalesPage 
-                  isWhiteLabeled={isWhiteLabeled}
-                />
-              )}
-            </TabsContent>
-          </div>
-        </Tabs>
-      </div>
-      
-      {currentlyPlaying && (
-        <JukeboxPlayer 
-          track={currentlyPlaying}
-          onClose={handleStopPlaying}
-          showDonateButton={true}
-        />
+              <span className="text-sm w-12">{volume[0]}%</span>
+            </div>
+          </CardContent>
+        </Card>
       )}
+
+      <Tabs defaultValue="library" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="library">Library</TabsTrigger>
+          <TabsTrigger value="playlists">Playlists</TabsTrigger>
+          <TabsTrigger value="discover">Discover</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="library" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Music className="h-5 w-5" />
+                Music Library
+              </CardTitle>
+              <CardDescription>
+                Your collection of AI-generated music
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex gap-2 mb-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search tracks, artists, or genres..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                {filteredTracks.map((track) => (
+                  <div
+                    key={track.id}
+                    className={`flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors ${
+                      currentTrack?.id === track.id ? 'bg-muted border-primary' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => playTrack(track)}
+                      >
+                        {currentTrack?.id === track.id && isPlaying ? (
+                          <Pause className="h-4 w-4" />
+                        ) : (
+                          <Play className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <div>
+                        <p className="font-medium">{track.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {track.artist} • {track.duration}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {track.genre}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => toggleLike(track.id)}
+                      >
+                        <Heart 
+                          className={`h-4 w-4 ${track.isLiked ? 'fill-red-500 text-red-500' : ''}`} 
+                        />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => shareTrack(track)}
+                      >
+                        <Share className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="playlists" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Playlists</CardTitle>
+              <CardDescription>
+                Organize your favorite AI-generated music
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                {playlists.map((playlist) => (
+                  <div
+                    key={playlist.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <Music className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{playlist.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {playlist.trackCount} tracks
+                        </p>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm">
+                      Open
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button className="w-full mt-4">
+                Create New Playlist
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="discover" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Discover New Music</CardTitle>
+              <CardDescription>
+                AI-powered music recommendations just for you
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4">
+                <div className="p-4 border rounded-lg">
+                  <h3 className="font-medium mb-2">Weekly AI Mix</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Fresh AI-generated tracks curated for your taste
+                  </p>
+                  <Button>Listen Now</Button>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h3 className="font-medium mb-2">Genre Explorer</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Discover new genres with AI-powered recommendations
+                  </p>
+                  <Button variant="outline">Explore</Button>
+                </div>
+                <div className="p-4 border rounded-lg">
+                  <h3 className="font-medium mb-2">Mood-Based Playlists</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Music that matches your current mood and energy
+                  </p>
+                  <Button variant="outline">Find My Mood</Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

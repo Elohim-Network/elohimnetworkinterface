@@ -1,85 +1,47 @@
-
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Signal, SignalHigh, SignalMedium, SignalLow } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { CheckCircle, XCircle, Clock } from 'lucide-react';
 
 interface ConnectionStatusProps {
-  status: {
-    mistral: 'unknown' | 'connected' | 'disconnected';
-    stableDiffusion: 'unknown' | 'connected' | 'disconnected';
-  };
+  status: 'connected' | 'disconnected' | 'unknown';
+  service: string;
 }
 
-const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ status }) => {
-  // Determine overall status
-  const getOverallStatus = () => {
-    if (status.mistral === 'connected' && status.stableDiffusion === 'connected') {
-      return 'connected';
-    }
-    if (status.mistral === 'disconnected' && status.stableDiffusion === 'disconnected') {
-      return 'disconnected';
-    }
-    if (status.mistral === 'unknown' && status.stableDiffusion === 'unknown') {
-      return 'unknown';
-    }
-    return 'partial';
-  };
-  
-  const overallStatus = getOverallStatus();
-  
-  // Get appropriate icon based on status
-  const getIcon = () => {
-    switch (overallStatus) {
+const ConnectionStatus: React.FC<ConnectionStatusProps> = ({ status, service }) => {
+  const getStatusConfig = () => {
+    switch (status) {
       case 'connected':
-        return <SignalHigh className="h-4 w-4 text-green-500" />;
-      case 'partial':
-        return <SignalMedium className="h-4 w-4 text-yellow-500" />;
+        return {
+          icon: CheckCircle,
+          text: 'Connected',
+          variant: 'default' as const,
+          className: 'bg-green-500 hover:bg-green-600'
+        };
       case 'disconnected':
-        return <SignalLow className="h-4 w-4 text-red-500" />;
+        return {
+          icon: XCircle,
+          text: 'Disconnected',
+          variant: 'destructive' as const,
+          className: 'bg-red-500 hover:bg-red-600'
+        };
       default:
-        return <Signal className="h-4 w-4 text-gray-400" />;
+        return {
+          icon: Clock,
+          text: 'Checking...',
+          variant: 'secondary' as const,
+          className: 'bg-yellow-500 hover:bg-yellow-600'
+        };
     }
   };
-  
+
+  const config = getStatusConfig();
+  const Icon = config.icon;
+
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="px-2 relative"
-          >
-            {getIcon()}
-            {overallStatus !== 'connected' && (
-              <span className="absolute top-0 right-0 w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-            )}
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <div className="p-2">
-            <h4 className="font-medium mb-2">Backend Status</h4>
-            <div className="space-y-1 text-xs">
-              <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${
-                  status.mistral === 'connected' ? 'bg-green-500' : 
-                  status.mistral === 'disconnected' ? 'bg-red-500' : 'bg-gray-400'
-                }`} />
-                <span>Mistral API: {status.mistral}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className={`h-2 w-2 rounded-full ${
-                  status.stableDiffusion === 'connected' ? 'bg-green-500' : 
-                  status.stableDiffusion === 'disconnected' ? 'bg-red-500' : 'bg-gray-400'
-                }`} />
-                <span>Stable Diffusion: {status.stableDiffusion}</span>
-              </div>
-            </div>
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <Badge variant={config.variant} className={config.className}>
+      <Icon className="h-3 w-3 mr-1" />
+      {service}: {config.text}
+    </Badge>
   );
 };
 

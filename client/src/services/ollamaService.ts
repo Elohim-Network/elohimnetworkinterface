@@ -1,13 +1,24 @@
 
-import { supabase } from '@/integrations/supabase/client';
-import { OllamaRequest, OllamaResponse } from '@/types/chat';
+// Direct Ollama API service for local connections
+interface OllamaRequest {
+  model: string;
+  prompt: string;
+  system?: string;
+  options?: {
+    temperature?: number;
+  };
+}
+
+interface OllamaResponse {
+  response: string;
+}
 
 /**
- * Service for interacting with the Ollama API through a Supabase Edge Function
+ * Service for interacting with local Ollama API directly
  */
 export const ollamaService = {
   /**
-   * Generate a response from the Ollama API
+   * Generate a response from the local Ollama API
    * 
    * @param model - The model to use for generation
    * @param prompt - The prompt to send to the model
@@ -25,20 +36,23 @@ export const ollamaService = {
         }
       };
 
-      const { data, error } = await supabase.functions.invoke('local-llm-proxy', {
-        body: request,
+      const response = await fetch('http://127.0.0.1:11434/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
       });
 
-      if (error) {
-        console.error('Error calling Ollama via Edge Function:', error);
-        throw new Error(`Failed to generate response: ${error.message}`);
+      if (!response.ok) {
+        throw new Error(`Failed to connect to local Ollama: ${response.statusText}`);
       }
 
-      const response = data as OllamaResponse;
-      return response.response;
+      const data = await response.json() as OllamaResponse;
+      return data.response;
     } catch (err) {
       console.error('Error in generateResponse:', err);
-      return 'Sorry, I encountered an error while processing your request.';
+      return 'Sorry, I encountered an error connecting to your local Ollama server. Please ensure it is running and accessible.';
     }
   }
 };

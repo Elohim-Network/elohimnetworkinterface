@@ -1,334 +1,174 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { useChat } from '@/hooks/useChat';
-import { useVoice } from '@/hooks/useVoice';
-import { useModules } from '@/hooks/useModules';
+import React, { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import Header from '@/components/Header';
-import Sidebar from '@/components/Sidebar';
-import ChatInput from '@/components/ChatInput';
-import MessageBubble from '@/components/MessageBubble';
-import VoiceControl from '@/components/VoiceControl';
-import ElohimIntroduction from '@/components/ElohimIntroduction';
-import ElohimAvatar from '@/components/ElohimAvatar';
-import ModulePromotion from '@/components/ModulePromotion';
-import AdminModeToggle from '@/components/AdminModeToggle';
+import { Send, Bot, User, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+}
+
 const ChatInterface: React.FC = () => {
-  const { 
-    sessions, 
-    currentSession, 
-    isLoading, 
-    sendMessage, 
-    createNewSession, 
-    switchSession, 
-    deleteSession 
-  } = useChat();
-  
-  const {
-    isListening,
-    transcript,
-    isSpeaking,
-    voiceEnabled,
-    handsFreeMode,
-    voiceHistory,
-    availableVoices,
-    currentVoiceId,
-    elevenLabsApiKey,
-    toggleListening,
-    toggleVoiceEnabled,
-    toggleHandsFreeMode,
-    speak,
-    stopSpeaking,
-    resetTranscript,
-    updateApiKey,
-    updateVoice,
-    cloneVoice,
-    deleteCustomVoice,
-    loadVoices,
-    useBrowserVoice,
-    toggleBrowserVoice
-  } = useVoice();
-  
-  const {
-    promotedModule,
-    isFeatureUnlocked,
-    isAdminUser,
-    setAdminStatus,
-    purchaseModule,
-  } = useModules();
-  
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [showVoiceControls, setShowVoiceControls] = useState(false);
-  const [showIntroduction, setShowIntroduction] = useState(false);
-  const [showAvatar, setShowAvatar] = useState(false);
-  const [showPromotion, setShowPromotion] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  
-  useEffect(() => {
-    const hasSeenIntro = localStorage.getItem('elohim-intro-seen');
-    if (!hasSeenIntro) {
-      setTimeout(() => setShowIntroduction(true), 1500);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: '1',
+      role: 'assistant',
+      content: 'Hello! I\'m Agent Elohim, your AI assistant. How can I help you today?',
+      timestamp: new Date()
     }
-    
-    if (!isAdminUser()) {
-      const promotionTimer = setTimeout(() => {
-        setShowPromotion(true);
-      }, 30000);
-      
-      return () => clearTimeout(promotionTimer);
-    }
-  }, [isAdminUser]);
-  
-  const handleIntroductionComplete = () => {
-    setShowIntroduction(false);
-    localStorage.setItem('elohim-intro-seen', 'true');
-    toggleListening();
-    toast.success("Agent Elohim is now listening! Ask me anything.");
-  };
-  
-  const handleIntroductionSkip = () => {
-    setShowIntroduction(false);
-    localStorage.setItem('elohim-intro-seen', 'true');
-    toast.info("You can activate voice controls anytime using the mic button.");
-  };
-  
-  const toggleAvatar = () => {
-    if (!isFeatureUnlocked('avatar-module') && !isAdminUser()) {
-      toast.info("Avatar feature requires the Avatar Customization module");
-      return;
-    }
-    
-    setShowAvatar(prev => !prev);
-  };
-  
-  const handlePromotionPurchase = async (moduleId: string) => {
-    await purchaseModule(moduleId);
-    setShowPromotion(false);
-  };
-  
-  const dismissPromotion = () => {
-    setShowPromotion(false);
-    setTimeout(() => {
-      setShowPromotion(true);
-    }, 120000);
-  };
-  
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [currentSession?.messages]);
-  
-  useEffect(() => {
-    if (isListening && transcript && !transcript.endsWith('...') && transcript.length > 5) {
-      const timer = setTimeout(() => {
-        toggleListening();
-        if (transcript) {
-          sendMessage(transcript);
-          resetTranscript();
-        }
-      }, 1500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isListening, transcript, toggleListening, sendMessage, resetTranscript]);
-  
-  useEffect(() => {
-    if (handsFreeMode && transcript && !transcript.endsWith('...') && transcript.length > 10) {
-      if (!isFeatureUnlocked('voice-module') && !isAdminUser()) {
-        toggleHandsFreeMode();
-        toast.info("Hands-free mode requires the Advanced Voice Controls module");
-        return;
-      }
-      
-      const timer = setTimeout(() => {
-        if (transcript) {
-          sendMessage(transcript);
-          resetTranscript();
-        }
-      }, 2000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [handsFreeMode, transcript, sendMessage, resetTranscript, isFeatureUnlocked, isAdminUser, toggleHandsFreeMode]);
-  
-  useEffect(() => {
-    if (isListening || isSpeaking || handsFreeMode) {
-      setShowVoiceControls(true);
-      
-      if (!isListening && !isSpeaking && !handsFreeMode) {
-        const timer = setTimeout(() => {
-          setShowVoiceControls(false);
-        }, 3000);
-        
-        return () => clearTimeout(timer);
+  ]);
+  const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+      const scrollContainer = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
       }
     }
-  }, [isListening, isSpeaking, handsFreeMode]);
-  
-  const handleSendMessage = (message: string) => {
-    sendMessage(message);
   };
-  
-  const toggleSidebar = () => {
-    setIsSidebarCollapsed(prev => !prev);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const sendMessage = async () => {
+    if (!input.trim() || isLoading) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: input,
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      // Mock AI response - in real app, this would call the API
+      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+      
+      const responses = [
+        "I understand your question. Let me help you with that.",
+        "That's an interesting point. Here's what I think about it...",
+        "I can definitely assist you with that task.",
+        "Let me analyze this for you and provide a comprehensive response.",
+        "Based on my understanding, here's what I would recommend..."
+      ];
+      
+      const aiMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: responses[Math.floor(Math.random() * responses.length)] + " " + 
+                "This is a demo response. In the full application, this would connect to your AI backend.",
+        timestamp: new Date()
+      };
+
+      setMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      toast.error('Failed to send message. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
-  
-  const handleUpdateConnectionConfig = () => {
-    toast.info('Connection configuration updated');
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
   };
-  
-  if (!currentSession) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-medium mb-4">Welcome to Agent Elohim</h2>
-          <p className="text-muted-foreground mb-6">Start a new conversation to begin</p>
-          <button
-            onClick={createNewSession}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg"
-          >
-            Start Conversation
-          </button>
-        </div>
-      </div>
-    );
-  }
-  
+
   return (
-    <div className="h-full flex overflow-hidden">
-      <Sidebar
-        sessions={sessions}
-        currentSessionId={currentSession?.id}
-        onNewSession={createNewSession}
-        onSwitchSession={switchSession}
-        onDeleteSession={deleteSession}
-        isCollapsed={isSidebarCollapsed}
-        onToggleSidebar={toggleSidebar}
-        conversationHistory={voiceHistory}
-      />
+    <Card className="h-[600px] flex flex-col">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Bot className="h-5 w-5" />
+          Agent Elohim
+        </CardTitle>
+      </CardHeader>
       
-      <div className="flex-1 flex flex-col h-full">
-        <div className="flex flex-col">
-          <Header
-            title={currentSession.title}
-            isCollapsed={isSidebarCollapsed}
-            onToggleSidebar={toggleSidebar}
-            onUpdateConnectionConfig={handleUpdateConnectionConfig}
-            sessions={sessions}
-            onExportChats={sessions.length > 0 ? () => toast.info('Exporting conversations...') : undefined}
-            onImportChats={(sessions, merge) => toast.success(`Conversations ${merge ? 'merged' : 'imported'} successfully`)}
-            availableVoices={availableVoices}
-            currentVoiceId={currentVoiceId}
-            elevenLabsApiKey={elevenLabsApiKey}
-            onUpdateVoiceApiKey={updateApiKey}
-            onUpdateVoice={updateVoice}
-            onCloneVoice={cloneVoice}
-            onDeleteVoice={deleteCustomVoice}
-            onRefreshVoices={loadVoices}
-            useBrowserVoice={useBrowserVoice}
-            onToggleBrowserVoice={toggleBrowserVoice}
-          />
-          <div className="ml-auto mr-2 -mt-8 z-10 relative">
-            <AdminModeToggle 
-              isAdmin={isAdminUser()} 
-              onToggle={setAdminStatus}
+      <CardContent className="flex-1 flex flex-col gap-4 p-0">
+        <ScrollArea ref={scrollAreaRef} className="flex-1 px-6">
+          <div className="space-y-4">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                {message.role === 'assistant' && (
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Bot className="h-4 w-4" />
+                  </div>
+                )}
+                
+                <div
+                  className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                    message.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted'
+                  }`}
+                >
+                  <p className="text-sm">{message.content}</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {message.timestamp.toLocaleTimeString()}
+                  </p>
+                </div>
+                
+                {message.role === 'user' && (
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <User className="h-4 w-4" />
+                  </div>
+                )}
+              </div>
+            ))}
+            
+            {isLoading && (
+              <div className="flex gap-3 justify-start">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Bot className="h-4 w-4" />
+                </div>
+                <div className="bg-muted rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span className="text-sm">Thinking...</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+        
+        <div className="px-6 pb-6">
+          <div className="flex gap-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Type your message here..."
+              disabled={isLoading}
+              className="flex-1"
             />
+            <Button 
+              onClick={sendMessage} 
+              disabled={!input.trim() || isLoading}
+              size="icon"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
           </div>
         </div>
-        
-        <div className="flex-1 relative">
-          <ScrollArea className="h-full pb-20">
-            <div className="p-4">
-              {currentSession.messages.map((message, index) => {
-                const previousMessage = index > 0 ? currentSession.messages[index - 1] : null;
-                return (
-                  <MessageBubble
-                    key={message.id}
-                    message={message}
-                    previousRole={previousMessage?.role}
-                    speak={speak}
-                  />
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
-          
-          {showPromotion && promotedModule && !isAdminUser() && (
-            <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-20 w-5/6 max-w-md">
-              <div className="relative">
-                <button
-                  onClick={dismissPromotion}
-                  className="absolute top-2 right-2 z-10 rounded-full h-5 w-5 bg-black/20 
-                  hover:bg-black/40 flex items-center justify-center text-white"
-                  aria-label="Close promotion"
-                >
-                  ✕
-                </button>
-                <ModulePromotion
-                  module={promotedModule}
-                  onPurchase={handlePromotionPurchase}
-                  className="shadow-xl"
-                />
-              </div>
-            </div>
-          )}
-          
-          {(showVoiceControls || handsFreeMode) && (
-            <div className="absolute top-4 right-4 z-10">
-              <VoiceControl
-                isListening={isListening}
-                isSpeaking={isSpeaking}
-                voiceEnabled={voiceEnabled}
-                handsFreeMode={handsFreeMode}
-                toggleListening={toggleListening}
-                toggleVoiceEnabled={toggleVoiceEnabled}
-                toggleHandsFreeMode={toggleHandsFreeMode}
-                stopSpeaking={stopSpeaking}
-                showAvatar={toggleAvatar}
-              />
-            </div>
-          )}
-          
-          {handsFreeMode && (
-            <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 z-10 glass p-2 rounded-lg animate-pulse-subtle">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 bg-red-500 rounded-full"></div>
-                <span className="text-sm font-medium">Hands-free mode active</span>
-              </div>
-            </div>
-          )}
-          
-          <ElohimAvatar isVisible={showAvatar} />
-        </div>
-        
-        <div className="flex-shrink-0">
-          <ChatInput
-            onSendMessage={handleSendMessage}
-            isLoading={isLoading}
-            isListening={isListening}
-            toggleListening={toggleListening}
-            transcript={transcript}
-            isSpeaking={isSpeaking}
-            voiceEnabled={voiceEnabled}
-            toggleVoiceEnabled={toggleVoiceEnabled}
-            stopSpeaking={stopSpeaking}
-            resetTranscript={resetTranscript}
-            handsFreeMode={handsFreeMode}
-            toggleHandsFreeMode={toggleHandsFreeMode}
-          />
-        </div>
-      </div>
-      
-      {showIntroduction && (
-        <ElohimIntroduction 
-          onComplete={handleIntroductionComplete}
-          onSkip={handleIntroductionSkip}
-        />
-      )}
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, ShoppingCart, Star, Filter, Plus, BarChart } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link } from 'wouter';
 import { toast } from 'sonner';
 
 // Module interface

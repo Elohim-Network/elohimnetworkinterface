@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Router, Route, Switch } from "wouter";
 import { ThemeProvider } from "@/components/theme-provider";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -30,19 +30,18 @@ const App = () => (
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/app" element={<Index />} />
-            <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/jukebox" element={<JukeboxHero />} />
-            <Route path="/business" element={<BusinessTools />} />
-            <Route path="/local-chat" element={<LocalChat />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+        <Router>
+          <Switch>
+            <Route path="/" component={Landing} />
+            <Route path="/app" component={Index} />
+            <Route path="/marketplace" component={Marketplace} />
+            <Route path="/admin" component={AdminDashboard} />
+            <Route path="/jukebox" component={JukeboxHero} />
+            <Route path="/business" component={BusinessTools} />
+            <Route path="/local-chat" component={LocalChat} />
+            <Route component={NotFound} />
+          </Switch>
+        </Router>
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
