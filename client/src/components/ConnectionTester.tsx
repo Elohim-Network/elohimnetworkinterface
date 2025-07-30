@@ -13,34 +13,63 @@ interface ConnectionConfig {
   stableDiffusionUrl: string;
   mistralModel: string;
   sdModel: string;
+  voiceUrl: string;
+  speechUrl: string;
 }
 
 const ConnectionTester: React.FC = () => {
   const [config, setConfig] = useState<ConnectionConfig>({
-    mistralUrl: 'https://agentelohim.com/v1/chat/completions',
+    mistralUrl: 'http://178.16.143.5:3000/respond',
     stableDiffusionUrl: 'http://127.0.0.1:8188',
-    mistralModel: 'mistral-7b-instruct',
-    sdModel: 'stable-diffusion-v1-5'
+    mistralModel: 'mistral-4b-instruct',
+    sdModel: 'stable-diffusion-v1-5',
+    voiceUrl: 'http://178.16.143.5:3000/voice',
+    speechUrl: 'http://178.16.143.5:3000/speak'
   });
 
   const [testing, setTesting] = useState(false);
   const [connections, setConnections] = useState<{
     mistral: 'idle' | 'testing' | 'connected' | 'failed';
     stableDiffusion: 'idle' | 'testing' | 'connected' | 'failed';
+    voice: 'idle' | 'testing' | 'connected' | 'failed';
+    speech: 'idle' | 'testing' | 'connected' | 'failed';
   }>({
     mistral: 'idle',
-    stableDiffusion: 'idle'
+    stableDiffusion: 'idle',
+    voice: 'idle',
+    speech: 'idle'
   });
 
-  const testConnection = async (service: 'mistral' | 'stableDiffusion') => {
+  const testConnection = async (service: 'mistral' | 'stableDiffusion' | 'voice' | 'speech') => {
     setConnections(prev => ({ ...prev, [service]: 'testing' }));
     
     try {
-      const url = service === 'mistral' ? config.mistralUrl : config.stableDiffusionUrl;
-      const response = await fetch(url, {
-        method: 'OPTIONS',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      let url = '';
+      let method = 'GET';
+      let headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      
+      switch (service) {
+        case 'mistral':
+          url = config.mistralUrl.replace('/respond', '/health');
+          break;
+        case 'stableDiffusion':
+          url = config.stableDiffusionUrl;
+          method = 'OPTIONS';
+          break;
+        case 'voice':
+          url = config.voiceUrl.replace('/voice', '/health');
+          break;
+        case 'speech':
+          url = config.speechUrl.replace('/speak', '/health');
+          break;
+      }
+      
+      // Add auth for Agent Elohim endpoints
+      if (service === 'mistral' || service === 'voice' || service === 'speech') {
+        headers['Authorization'] = 'Bearer elohim-core';
+      }
+      
+      const response = await fetch(url, { method, headers });
       
       if (response.ok) {
         setConnections(prev => ({ ...prev, [service]: 'connected' }));
@@ -58,7 +87,9 @@ const ConnectionTester: React.FC = () => {
     setTesting(true);
     await Promise.all([
       testConnection('mistral'),
-      testConnection('stableDiffusion')
+      testConnection('stableDiffusion'),
+      testConnection('voice'),
+      testConnection('speech')
     ]);
     setTesting(false);
   };

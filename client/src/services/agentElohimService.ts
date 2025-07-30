@@ -5,7 +5,10 @@ export async function runAgentElohim(input: string): Promise<string> {
   try {
     const response = await fetch("http://178.16.143.5:3000/respond", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": "Bearer elohim-core"
+      },
       body: JSON.stringify({ input })
     });
 
@@ -14,7 +17,7 @@ export async function runAgentElohim(input: string): Promise<string> {
     }
 
     const data = await response.json();
-    return data.output;
+    return data.output || data.response || "Agent Elohim processed your request successfully.";
   } catch (err) {
     console.error("Agent Elohim VPS error:", err);
     return "Sorry, I couldn't connect to the core agent. Please check the VPS connection.";

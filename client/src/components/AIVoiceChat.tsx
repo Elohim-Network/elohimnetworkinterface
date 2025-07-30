@@ -16,6 +16,8 @@ import {
   Settings
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { voiceService } from '@/services/voiceService';
+import { runAgentElohim } from '@/services/agentElohimService';
 
 interface VoiceMessage {
   id: string;
@@ -48,64 +50,52 @@ const AIVoiceChat: React.FC = () => {
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
-      mediaRecorderRef.current = mediaRecorder;
-      
-      const audioChunks: BlobPart[] = [];
-      
-      mediaRecorder.ondataavailable = (event) => {
-        audioChunks.push(event.data);
-      };
-      
-      mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        await processAudioMessage(audioBlob);
-      };
-      
-      mediaRecorder.start();
+      await voiceService.startRecording();
       setIsRecording(true);
-      toast.success('Recording started...');
+      toast.success('Recording started - Agent Elohim listening...');
     } catch (error) {
       toast.error('Failed to start recording. Please check microphone permissions.');
     }
   };
 
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+  const stopRecording = async () => {
+    if (isRecording) {
       setIsRecording(false);
-      toast.success('Recording stopped. Processing...');
+      toast.success('Recording stopped. Processing with Agent Elohim...');
+      try {
+        const audioBlob = await voiceService.stopRecording();
+        await processAudioMessage(audioBlob);
+      } catch (error) {
+        toast.error('Failed to stop recording');
+        console.error('Recording stop error:', error);
+      }
     }
   };
 
   const processAudioMessage = async (audioBlob: Blob) => {
     setIsGenerating(true);
     try {
-      // Simulate audio processing and transcription
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Use Agent Elohim VPS for voice processing
+      const aiResponse = await voiceService.transcribeAndProcess(audioBlob);
       
-      const transcribedText = "This is a simulated transcription of your voice message. In a real implementation, this would use speech-to-text AI.";
-      
-      // Simulate AI response generation
-      const aiResponse = "Thank you for your message! This is an AI-generated voice response. In a real implementation, this would be synthesized speech.";
+      // Generate speech synthesis URL
+      const speechUrl = await voiceService.synthesizeSpeech(aiResponse);
       
       // Create voice message
-      const audioUrl = URL.createObjectURL(audioBlob);
       const newVoiceMessage: VoiceMessage = {
         id: Date.now().toString(),
         text: aiResponse,
-        audioUrl,
+        audioUrl: speechUrl,
         voice: selectedVoice,
         timestamp: new Date(),
-        duration: 3.5
+        duration: 5.0
       };
       
       setVoiceMessages(prev => [newVoiceMessage, ...prev]);
-      toast.success('Voice message processed!');
+      toast.success('Voice processed by Agent Elohim!');
     } catch (error) {
-      toast.error('Failed to process audio message');
+      toast.error('Failed to process audio with Agent Elohim VPS');
+      console.error('Voice processing error:', error);
     } finally {
       setIsGenerating(false);
     }
