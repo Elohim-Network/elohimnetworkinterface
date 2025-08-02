@@ -99,7 +99,9 @@ const JukeboxUploader: React.FC<JukeboxUploaderProps> = ({ onUploadComplete, isA
         audioUrl,
         coverImageUrl: coverUrl,
         duration,
-        tags
+        tags,
+        genre: 'Electronic', // Default genre
+        status: 'draft' as const
       });
       
       // Clear form

@@ -4,7 +4,11 @@ const AppConfig = {
   social: {
     twitter: "https://twitter.com/agentelohim",
     github: "https://github.com/agentelohim",
-    linkedin: "https://linkedin.com/company/agentelohim"
+    linkedin: "https://linkedin.com/company/agentelohim",
+    facebook: "https://facebook.com/agentelohim",
+    instagram: "https://instagram.com/agentelohim",
+    youtube: "https://youtube.com/@agentelohim",
+    supportEmail: "support@agentelohim.com"
   }
 };
 
