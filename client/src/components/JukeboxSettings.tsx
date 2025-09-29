@@ -52,7 +52,7 @@ const JukeboxSettings: React.FC<JukeboxSettingsProps> = ({
     if (newCaption.trim()) {
       setLocalSettings(prev => ({
         ...prev,
-        captionTemplates: [...prev.captionTemplates, newCaption.trim()]
+        captionTemplates: [...prev.captionTemplates, { name: `Template ${prev.captionTemplates.length + 1}`, template: newCaption.trim() }]
       }));
       setNewCaption('');
     }
@@ -94,7 +94,7 @@ const JukeboxSettings: React.FC<JukeboxSettingsProps> = ({
     if (newCta.trim()) {
       setLocalSettings(prev => ({
         ...prev,
-        ctaTemplates: [...prev.ctaTemplates, newCta.trim()]
+        ctaTemplates: [...prev.ctaTemplates, { name: `CTA ${prev.ctaTemplates.length + 1}`, text: newCta.trim() }]
       }));
       setNewCta('');
     }
@@ -254,7 +254,7 @@ const JukeboxSettings: React.FC<JukeboxSettingsProps> = ({
                 <div className="space-y-2">
                   {localSettings.captionTemplates.map((caption, index) => (
                     <div key={index} className="flex items-center justify-between border rounded-md p-2">
-                      <div className="text-sm">{caption}</div>
+                      <div className="text-sm">{caption.template}</div>
                       <Button 
                         variant="ghost" 
                         size="icon"
@@ -348,7 +348,7 @@ const JukeboxSettings: React.FC<JukeboxSettingsProps> = ({
                 <div className="space-y-2">
                   {localSettings.ctaTemplates.map((cta, index) => (
                     <div key={index} className="flex items-center justify-between border rounded-md p-2">
-                      <div className="text-sm">{cta}</div>
+                      <div className="text-sm">{cta.text}</div>
                       <Button 
                         variant="ghost" 
                         size="icon"
@@ -449,16 +449,14 @@ const JukeboxSettings: React.FC<JukeboxSettingsProps> = ({
                     max="21"
                     value={localSettings.schedulePreferences.frequency}
                     onChange={(e) => {
-                      const value = parseInt(e.target.value);
-                      if (!isNaN(value) && value > 0) {
-                        setLocalSettings(prev => ({
-                          ...prev,
-                          schedulePreferences: {
-                            ...prev.schedulePreferences,
-                            frequency: value
-                          }
-                        }));
-                      }
+                      const value = e.target.value;
+                      setLocalSettings(prev => ({
+                        ...prev,
+                        schedulePreferences: {
+                          ...prev.schedulePreferences,
+                          frequency: value
+                        }
+                      }));
                     }}
                   />
                 </div>
